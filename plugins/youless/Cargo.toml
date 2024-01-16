@@ -1,0 +1,14 @@
+[package]
+description = "YouLess energy meter integration"
+edition = "2021"
+name = "plugin-youless"
+version = "0.0.1"
+
+[lib]
+crate-type = ["cdylib"]
+
+[lints]
+workspace = true
+
+[dependencies]
+prost = "0.12.3"
