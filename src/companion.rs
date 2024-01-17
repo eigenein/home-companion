@@ -15,7 +15,7 @@ pub struct Companion {
 
 impl Companion {
     #[instrument(skip_all)]
-    pub async fn from_setup(setup: &Setup) -> Result<Self> {
+    pub async fn from_setup(setup: Setup) -> Result<Self> {
         info!("loading connections…");
 
         let engine = Engine::new_async()?;
@@ -24,13 +24,13 @@ impl Companion {
         let connections: HashMap<String, Connection> = {
             let engine = &engine;
             let linker = &linker;
-            stream::iter(setup.connections.iter())
+            stream::iter(setup.connections.into_iter())
                 .then(|(id, connection)| async move {
                     info!(id, path = ?connection.module_path, "loading connection…");
                     Ok::<_, Error>((
                         id.to_string(),
                         engine.load_module(&connection.module_path)?,
-                        &connection.settings,
+                        connection.settings,
                     ))
                 })
                 .and_then(|(id, module, settings)| async move {

@@ -1,5 +1,6 @@
 mod cli;
 mod companion;
+mod helpers;
 mod prelude;
 mod setup;
 mod tracing;
@@ -25,7 +26,7 @@ async fn main() -> Result {
     match cli.command {
         Command::Run { setup_path } => {
             let setup = Setup::from_file(&setup_path)?;
-            Companion::from_setup(&setup)
+            Companion::from_setup(setup)
                 .await
                 .context("failed to create Companion engine")?;
             Ok(())
