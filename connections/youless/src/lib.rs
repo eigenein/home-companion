@@ -6,6 +6,12 @@ pub extern "C" fn alloc(size: usize) -> *mut u8 {
     unsafe { std::alloc::alloc(layout) }
 }
 
+#[link(wasm_import_module = "logging")]
+extern "C" {
+    // https://doc.rust-lang.org/reference/items/external-blocks.html#the-link-attribute
+    fn info(message: &str);
+}
+
 #[no_mangle]
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn init(settings: &[u8]) -> &[u8] {
