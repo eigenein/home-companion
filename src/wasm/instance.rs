@@ -1,7 +1,7 @@
 use toml::Table;
 use wasmtime::{AsContextMut, TypedFunc, WasmParams, WasmResults};
 
-use crate::{helpers::serde::transcode_toml_to_message_pack, prelude::*};
+use crate::{helpers::serde::transcode_toml_to_message_pack, prelude::*, wasm::memory::Segment};
 
 pub struct Instance(wasmtime::Instance);
 
@@ -16,15 +16,14 @@ impl Instance {
     pub fn read_bytes<D: Send>(
         &self,
         mut store: impl AsContextMut<Data = D>,
-        offset: usize,
-        size: usize,
+        segment: Segment,
     ) -> Result<Vec<u8>> {
-        let mut buffer = Vec::with_capacity(size);
+        let mut buffer = Vec::with_capacity(segment.size);
         if !buffer.is_empty() {
             self.0
                 .get_memory(&mut store, "memory")
                 .ok_or_else(|| anyhow!("module  does not export `memory`"))?
-                .read(&store, offset, &mut buffer)
+                .read(&store, segment.offset, &mut buffer)
                 .context("failed to read the instance's memory")?;
         }
         Ok(buffer)
@@ -43,7 +42,7 @@ impl Instance {
         &mut self,
         mut store: impl AsContextMut<Data = D>,
         value: &[u8],
-    ) -> Result<usize> {
+    ) -> Result<Segment> {
         let offset =
             self.alloc(&mut store, value.len()).await.context("failed to allocate memory")?;
         self.0
@@ -51,7 +50,7 @@ impl Instance {
             .ok_or_else(|| anyhow!("module does not export `memory`"))?
             .write(&mut store, offset, value)
             .context("failed to write the buffer into the instance's memory")?;
-        Ok(offset)
+        Ok(Segment::new(offset, value.len()))
     }
 
     /// Allocate a buffer of `size` bytes in the instance's memory.
@@ -115,15 +114,11 @@ impl Connection {
         settings: Table,
     ) -> Result<Vec<u8>> {
         let settings = transcode_toml_to_message_pack(settings)?;
-        let offset = self.0.write_bytes(&mut store, &settings).await?;
+        let segment = self.0.write_bytes(&mut store, &settings).await?;
         let (offset, size): (u32, u32) = self
             .0
-            .call_typed_func_async(
-                store,
-                "init",
-                (u32::try_from(offset)?, u32::try_from(settings.len())?),
-            )
+            .call_typed_func_async(&mut store, "init", segment.as_tuple_u32()?)
             .await?;
-        self.0.read_bytes(&mut store, usize::try_from(offset)?, usize::try_from(size)?)
+        self.0.read_bytes(&mut store, Segment::from_u32(offset, size)?)
     }
 }
