@@ -11,12 +11,6 @@ impl From<wasmtime::Instance> for Instance {
 }
 
 impl Instance {
-    /// Call the module's `init()`.
-    #[allow(clippy::future_not_send)]
-    pub async fn call_init_async<S: Send>(&self, store: impl AsContextMut<Data = S>) -> Result {
-        self.call_typed_func_async(store, "init", ()).await
-    }
-
     #[allow(clippy::future_not_send)]
     async fn call_typed_func_async<S: Send, P: WasmParams, R: WasmResults>(
         &self,
@@ -37,5 +31,22 @@ impl Instance {
                 self.0.module(&mut store).name(),
             )
         })
+    }
+}
+
+/// Companion's service connection via WASM module instance.
+pub struct Connection(Instance);
+
+impl From<Instance> for Connection {
+    fn from(instance: Instance) -> Self {
+        Self(instance)
+    }
+}
+
+impl Connection {
+    /// Call the module's `init()`.
+    #[allow(clippy::future_not_send)]
+    pub async fn call_init_async<S: Send>(&self, store: impl AsContextMut<Data = S>) -> Result {
+        self.0.call_typed_func_async(store, "init", ()).await
     }
 }
