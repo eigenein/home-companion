@@ -5,12 +5,12 @@ use futures::{stream, StreamExt, TryStreamExt};
 use crate::{
     prelude::*,
     setup::Setup,
-    wasm::{engine::Engine, instance::Connection},
+    wasm::{engine::Engine, instance::Connection, module::Module},
 };
 
 /// 🚀 The Companion engine.
 pub struct Companion {
-    connections: HashMap<String, Connection>,
+    connections: HashMap<String, Module>,
 }
 
 impl Companion {
@@ -21,7 +21,7 @@ impl Companion {
         let engine = Engine::new_async()?;
         let linker = engine.new_linker();
 
-        let connections: HashMap<String, Connection> = {
+        let connections: HashMap<String, Module> = {
             let engine = &engine;
             let linker = &linker;
             stream::iter(setup.connections.into_iter())
@@ -38,7 +38,7 @@ impl Companion {
                     let instance = linker.instantiate_async(&mut store, &module).await?;
                     let mut connection = Connection::from(instance);
                     connection.call_init_async(&mut store, settings).await?;
-                    Ok((id, connection))
+                    Ok((id, module))
                 })
                 .try_collect()
                 .await?
