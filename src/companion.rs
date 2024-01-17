@@ -9,30 +9,37 @@ use crate::{
 };
 
 /// 🚀 The Companion engine.
-pub struct Companion {}
+pub struct Companion {
+    connections: HashMap<String, Module>,
+}
 
 impl Companion {
     #[instrument(skip_all)]
     pub async fn from_setup(setup: &Setup) -> Result<Self> {
-        info!("loading…");
+        info!("loading connections…");
+
         let engine = Engine::new_async()?;
         let linker = engine.new_linker();
-        let _modules: HashMap<String, Module> = stream::iter(setup.connections.iter())
-            .then(|(id, connection)| async {
-                Ok::<_, Error>((id.to_string(), engine.load_module(&connection.module_path)?))
-            })
-            .and_then(|(id, module)| {
-                let engine = &engine;
-                let linker = &linker;
-                async move {
+
+        let connections: HashMap<String, Module> = {
+            let engine = &engine;
+            let linker = &linker;
+            stream::iter(setup.connections.iter())
+                .then(|(id, connection)| async move {
+                    info!(id, path = ?connection.module_path, "loading connection…");
+                    Ok::<_, Error>((id.to_string(), engine.load_module(&connection.module_path)?))
+                })
+                .and_then(|(id, module)| async move {
                     let mut store = engine.new_store(());
                     let instance = linker.instantiate_async(&mut store, &module).await?;
                     instance.call_init_async(&mut store).await?;
-                    Ok((id, module)) // TODO
-                }
-            })
-            .try_collect()
-            .await?;
-        Ok(Self {})
+                    Ok((id, module))
+                })
+                .try_collect()
+                .await?
+        };
+
+        info!(n_connections = connections.len(), "completed");
+        Ok(Self { connections })
     }
 }

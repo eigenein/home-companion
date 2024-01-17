@@ -34,7 +34,6 @@ impl Engine {
     }
 
     pub fn load_module(&self, path: &Path) -> Result<Module> {
-        info!(?path, "loading module…");
         wasmtime::Module::from_file(&self.0, path)
             .with_context(|| format!("failed to load WASM module from {path:?}"))
             .map(Into::into)
