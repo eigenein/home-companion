@@ -11,9 +11,8 @@ use serde::Deserialize;
 use crate::prelude::*;
 
 impl Setup {
-    #[instrument]
     pub fn from_file(path: &Path) -> Result<Self> {
-        info!("reading home setup…");
+        info!(?path, "reading home setup…");
         let content = read_to_string(path)
             .with_context(|| format!("failed to read home setup from `{path:?}`"))?;
         toml::from_str(&content)
@@ -28,12 +27,12 @@ pub struct Setup {
     ///
     /// Keys are unique IDs, which are used to route messages between connections.
     #[serde(default)]
-    pub connections: HashMap<String, ConnectionSetup>,
+    pub connections: HashMap<String, Connection>,
 }
 
 /// System connection.
 #[derive(Debug, Deserialize)]
-pub struct ConnectionSetup {
+pub struct Connection {
     /// WASM module path.
     #[serde(alias = "module", alias = "path")]
     pub module_path: PathBuf,

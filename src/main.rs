@@ -1,14 +1,15 @@
 mod cli;
-mod engine;
+mod companion;
 mod prelude;
 mod setup;
 mod tracing;
+mod wasm;
 
 use clap::Parser;
 
 use crate::{
     cli::{Cli, Command},
-    engine::EngineSetup,
+    companion::Companion,
     prelude::*,
     setup::Setup,
 };
@@ -24,13 +25,10 @@ async fn main() -> Result {
     match cli.command {
         Command::Run { setup_path } => {
             let setup = Setup::from_file(&setup_path)?;
-            EngineSetup::new(&setup)?
-                .load()
-                .init()
+            Companion::from_setup(&setup)
                 .await
-                .run()
-                .await
-                .context("the engine has crashed")
+                .context("failed to create Companion engine")?;
+            Ok(())
         }
     }
 }
