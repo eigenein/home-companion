@@ -27,13 +27,17 @@ impl Companion {
             stream::iter(setup.connections.iter())
                 .then(|(id, connection)| async move {
                     info!(id, path = ?connection.module_path, "loading connection…");
-                    Ok::<_, Error>((id.to_string(), engine.load_module(&connection.module_path)?))
+                    Ok::<_, Error>((
+                        id.to_string(),
+                        engine.load_module(&connection.module_path)?,
+                        &connection.settings,
+                    ))
                 })
-                .and_then(|(id, module)| async move {
+                .and_then(|(id, module, settings)| async move {
                     let mut store = engine.new_store(());
                     let instance = linker.instantiate_async(&mut store, &module).await?;
-                    let connection = Connection::from(instance);
-                    connection.call_init_async(&mut store).await?;
+                    let mut connection = Connection::from(instance);
+                    connection.call_init_async(&mut store, settings).await?;
                     Ok((id, connection))
                 })
                 .try_collect()

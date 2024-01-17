@@ -37,6 +37,7 @@ pub struct Connection {
     #[serde(alias = "module", alias = "path")]
     pub module_path: PathBuf,
 
+    /// Captures connection-specific settings.
     #[serde(flatten)]
-    pub extras: toml::Table,
+    pub settings: toml::Table,
 }
