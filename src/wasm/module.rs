@@ -16,3 +16,8 @@ impl Deref for Module {
         &self.0
     }
 }
+
+pub struct Stateful {
+    pub module: Module,
+    pub state: Vec<u8>,
+}
