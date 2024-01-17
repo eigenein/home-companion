@@ -9,7 +9,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilte
 use crate::prelude::*;
 
 pub fn init(
-    sentry_dsn: Option<String>,
+    sentry_dsn: Option<&str>,
     traces_sample_rate: f32,
 ) -> Result<(ClientInitGuard, WorkerGuard)> {
     let sentry_options = ClientOptions {

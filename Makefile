@@ -1,9 +1,13 @@
-.PHONY: build/release
-build/release:
+.PHONY: release
+release:
 	@cargo build --release --package=home-companion
 	@cargo build --release --target=wasm32-unknown-unknown --package=plugin-youless
 
-.PHONY: build/debug
-build/debug:
+.PHONY: debug
+debug:
 	@cargo build --package=home-companion
 	@cargo build --target=wasm32-unknown-unknown --package=plugin-youless
+
+.PHONY: fmt format
+fmt format:
+	@cargo +nightly fmt --all

@@ -1,5 +1,5 @@
 [package]
-description = "YouLess energy meter integration"
+description = "Youless energy meter integration"
 edition = "2021"
 name = "plugin-youless"
 version = "0.0.1"

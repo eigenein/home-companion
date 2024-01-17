@@ -1,3 +1,11 @@
+### Custom patterns
+
+# Dotenv's
+*.env
+
+# Home setups with potentially sensitive data
+*.toml
+
 ### VisualStudioCode template
 .vscode/*
 !.vscode/settings.json

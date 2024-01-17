@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
@@ -16,5 +18,9 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Command {
     /// Run the home companion indefinitely.
-    Run,
+    Run {
+        /// Home setup file path.
+        #[clap(long, env = "SETUP_PATH", default_value = "home.toml")]
+        setup_path: PathBuf,
+    },
 }
