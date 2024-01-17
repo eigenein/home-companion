@@ -9,6 +9,7 @@ pub extern "C" fn alloc(size: usize) -> *mut u8 {
 #[link(wasm_import_module = "logging")]
 extern "C" {
     // https://doc.rust-lang.org/reference/items/external-blocks.html#the-link-attribute
+    #[allow(improper_ctypes)]
     fn info(message: &str);
 }
 
