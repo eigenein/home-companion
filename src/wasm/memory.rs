@@ -8,7 +8,7 @@ use crate::{
 pub struct Memory(wasmtime::Memory, AllocFunction);
 
 impl Memory {
-    fn new<D>(memory_extern: Option<wasmtime::Extern>, alloc: AllocFunction) -> Result<Self> {
+    fn new(memory_extern: Option<wasmtime::Extern>, alloc: AllocFunction) -> Result<Self> {
         let inner = memory_extern
             .ok_or_else(|| anyhow!("module does not export `memory`"))?
             .into_memory()
@@ -19,7 +19,7 @@ impl Memory {
     pub fn try_from_caller<D>(caller: &mut Caller<'_, D>) -> Result<Self> {
         let memory_extern = caller.get_export("memory");
         let alloc = AllocFunction::try_from_caller(caller)?;
-        Self::new::<D>(memory_extern, alloc)
+        Self::new(memory_extern, alloc)
     }
 
     pub fn try_from_instance<D>(
@@ -27,8 +27,8 @@ impl Memory {
         instance: &wasmtime::Instance,
     ) -> Result<Self> {
         let memory_extern = instance.get_export(store.as_context_mut(), "memory");
-        let alloc = AllocFunction::try_from_instance(store.as_context_mut(), &instance)?;
-        Self::new::<D>(memory_extern, alloc)
+        let alloc = AllocFunction::try_from_instance(store.as_context_mut(), instance)?;
+        Self::new(memory_extern, alloc)
     }
 
     pub fn read_bytes<D: Send>(
