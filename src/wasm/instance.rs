@@ -26,7 +26,7 @@ impl Connection {
     /// # Returns
     ///
     /// Byte string, returned by the `init()`.
-    pub async fn call_init_async<D: Send>(
+    pub async fn init_async<D: Send>(
         &mut self,
         mut store: impl AsContextMut<Data = D>,
         settings: Table,

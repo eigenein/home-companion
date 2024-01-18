@@ -38,9 +38,9 @@ impl Companion {
                     let mut store = engine.new_store(());
                     let instance =
                         linker.instantiate_async(store.as_context_mut(), &module).await?;
-                    let mut connection = Connection::from(instance);
-                    let state =
-                        connection.call_init_async(store.as_context_mut(), settings).await?;
+                    let state = Connection::from(instance)
+                        .init_async(store.as_context_mut(), settings)
+                        .await?;
                     let stateful_module = StatefulModule { module, state };
                     Ok((id, stateful_module))
                 })
