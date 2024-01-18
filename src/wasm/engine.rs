@@ -1,15 +1,10 @@
 use std::path::Path;
 
-use tracing::Level;
-use wasmtime::{AsContext, Caller, Config, Store};
+use wasmtime::{Config, Store};
 
 use crate::{
     prelude::*,
-    wasm::{
-        linker::Linker,
-        memory::{Memory, Segment},
-        module::Module,
-    },
+    wasm::{linker::Linker, module::Module},
 };
 
 /// WASM engine/linker wrapper.
@@ -30,18 +25,7 @@ impl Engine {
     }
 
     pub fn new_linker<D: Send>(&self) -> Result<Linker<D>> {
-        let mut linker = wasmtime::Linker::<D>::new(&self.0);
-        linker.func_wrap(
-            "logging",
-            "info",
-            |mut caller: Caller<'_, D>, offset: u32, size: u32| {
-                let message = Memory::try_from_caller(&mut caller)?
-                    .read_bytes(caller.as_context(), Segment::try_from_u32(offset, size)?)?;
-                event!(Level::INFO, "{}", String::from_utf8(message)?);
-                Ok(())
-            },
-        )?;
-        Ok(linker.into())
+        Linker::new(wasmtime::Linker::<D>::new(&self.0))
     }
 
     pub fn load_module(&self, path: &Path) -> Result<Module> {

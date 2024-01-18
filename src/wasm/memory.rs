@@ -8,6 +8,7 @@ use crate::{
     },
 };
 
+/// WASM guest memory wrapper.
 pub struct Memory(wasmtime::Memory, AllocFunction);
 
 impl Memory {
@@ -32,6 +33,23 @@ impl Memory {
         let memory_extern = instance.get_export(store.as_context_mut(), "memory");
         let alloc = AllocFunction::try_from_instance(store.as_context_mut(), instance)?;
         Self::new(memory_extern, alloc)
+    }
+
+    pub fn read_bytes_from_caller<D: Send>(
+        caller: &mut Caller<'_, D>,
+        offset: u32,
+        size: u32,
+    ) -> Result<Vec<u8>> {
+        Self::try_from_caller(caller)?
+            .read_bytes(caller.as_context(), Segment::try_from_u32(offset, size)?)
+    }
+
+    pub fn read_string_from_caller<D: Send>(
+        caller: &mut Caller<'_, D>,
+        offset: u32,
+        size: u32,
+    ) -> Result<String> {
+        Ok(String::from_utf8(Self::read_bytes_from_caller(caller, offset, size)?)?)
     }
 
     pub fn read_bytes<D: Send>(
@@ -69,7 +87,7 @@ impl Memory {
     }
 }
 
-/// Continuous segment of WASM instance's memory.
+/// Reference to a continuous segment of WASM instance's memory.
 #[derive(Copy, Clone)]
 pub struct Segment {
     pub offset: usize,
