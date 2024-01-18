@@ -14,7 +14,6 @@ impl<T> From<wasmtime::Linker<T>> for Linker<T> {
 }
 
 impl<S: Send> Linker<S> {
-    #[allow(clippy::future_not_send)]
     #[instrument(skip_all)]
     pub async fn instantiate_async(
         &self,
@@ -22,9 +21,9 @@ impl<S: Send> Linker<S> {
         module: &Module,
     ) -> Result<Instance> {
         self.0
-            .instantiate_async(store.as_context_mut(), &module.0)
+            .instantiate_async(store.as_context_mut(), module.as_ref())
             .await
-            .with_context(|| format!("failed to instantiate module `{:?}`", module.0.name()))
-            .map(Instance)
+            .with_context(|| format!("failed to instantiate module `{:?}`", module.as_ref().name()))
+            .map(Instance::from)
     }
 }

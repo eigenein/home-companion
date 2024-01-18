@@ -1,5 +1,6 @@
 /// WASM module wrapper.
-pub struct Module(pub wasmtime::Module);
+#[derive(derive_more::From, derive_more::AsRef)]
+pub struct Module(wasmtime::Module);
 
 pub struct StatefulModule {
     pub module: Module,

@@ -13,13 +13,8 @@ use crate::{
 };
 
 /// WASM engine/linker wrapper.
+#[derive(derive_more::From)]
 pub struct Engine(wasmtime::Engine);
-
-impl From<wasmtime::Engine> for Engine {
-    fn from(inner: wasmtime::Engine) -> Self {
-        Self(inner)
-    }
-}
 
 impl Engine {
     pub fn new_async() -> Result<Self> {
@@ -52,6 +47,6 @@ impl Engine {
     pub fn load_module(&self, path: &Path) -> Result<Module> {
         wasmtime::Module::from_file(&self.0, path)
             .with_context(|| format!("failed to load WASM module from {path:?}"))
-            .map(Module)
+            .map(Module::from)
     }
 }

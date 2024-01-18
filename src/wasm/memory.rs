@@ -1,11 +1,14 @@
 use wasmtime::{AsContext, AsContextMut, Caller, Extern};
 
-use crate::{prelude::*, wasm::function::AllocFunction};
+use crate::{
+    prelude::*,
+    wasm::function::{AllocFunction, TypedFunction},
+};
 
 pub struct Memory(wasmtime::Memory, AllocFunction);
 
 impl Memory {
-    pub fn try_from_extern<D>(
+    fn try_from_extern<D>(
         store: impl AsContext<Data = D>,
         memory_extern: Option<Extern>,
         alloc_extern: Option<Extern>,
@@ -14,7 +17,8 @@ impl Memory {
             .ok_or_else(|| anyhow!("module does not export `memory`"))?
             .into_memory()
             .ok_or_else(|| anyhow!("`memory` export is not a memory"))?;
-        let alloc = AllocFunction::try_from_extern(store.as_context(), alloc_extern)?;
+        let alloc =
+            AllocFunction::from(TypedFunction::try_from_extern(store.as_context(), alloc_extern)?);
         Ok(Self(inner, alloc))
     }
 
@@ -33,7 +37,6 @@ impl Memory {
         Self::try_from_extern(store.as_context(), memory_extern, alloc_extern)
     }
 
-    #[allow(clippy::future_not_send)]
     pub fn read_bytes<D: Send>(
         &self,
         store: impl AsContext<Data = D>,
@@ -56,36 +59,16 @@ impl Memory {
     /// # Returns
     ///
     /// Buffer offset.
-    #[allow(clippy::future_not_send)]
     pub async fn write_bytes<D: Send>(
         &self,
         mut store: impl AsContextMut<Data = D>,
         value: &[u8],
     ) -> Result<Segment> {
-        let offset = self.alloc(store.as_context_mut(), value.len()).await?;
+        let offset = self.1.call_async(store.as_context_mut(), value.len()).await?;
         self.0
             .write(store.as_context_mut(), offset, value)
             .context("failed to write the buffer into the instance's memory")?;
         Ok(Segment::new(offset, value.len()))
-    }
-
-    /// Allocate a buffer of `size` bytes in the instance's memory.
-    ///
-    /// # Returns
-    ///
-    /// Offset of the allocated buffer.
-    #[allow(clippy::future_not_send)]
-    async fn alloc<S: Send>(
-        &self,
-        mut store: impl AsContextMut<Data = S>,
-        size: usize,
-    ) -> Result<usize> {
-        Ok(self
-            .1
-            .call_async(store.as_context_mut(), (size.try_into()?,))
-            .await
-            .context("failed to allocate memory")?
-            .try_into()?)
     }
 }
 

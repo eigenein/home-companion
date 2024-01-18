@@ -7,6 +7,7 @@ all = "warn"
 nursery = "warn"
 pedantic = "warn"
 module_name_repetitions = "allow"
+future_not_send = "allow"
 
 [package]
 authors = ["Pavel Perestoronin <eigenein@gmail.com>"]
@@ -30,6 +31,7 @@ workspace = true
 [dependencies]
 anyhow = "1.0.79"
 clap = { version = "4.4.16", features = ["cargo", "derive", "env"] }
+derive_more = { version = "1.0.0-beta.6", features = ["as_ref", "from"] }
 dotenvy = "0.15.7"
 futures = { version = "0.3.30", default-features = false, features = ["std"] }
 prost = "0.12.3"
