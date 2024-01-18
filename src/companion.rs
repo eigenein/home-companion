@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use futures::{stream, StreamExt, TryStreamExt};
+use wasmtime::AsContextMut;
 
 use crate::{
     prelude::*,
@@ -35,9 +36,11 @@ impl Companion {
                 })
                 .and_then(|(id, module, settings)| async move {
                     let mut store = engine.new_store(());
-                    let instance = linker.instantiate_async(&mut store, &module).await?;
+                    let instance =
+                        linker.instantiate_async(store.as_context_mut(), &module).await?;
                     let mut connection = Connection::from(instance);
-                    let state = connection.call_init_async(&mut store, settings).await?;
+                    let state =
+                        connection.call_init_async(store.as_context_mut(), settings).await?;
                     let stateful_module = Stateful { module, state };
                     Ok((id, stateful_module))
                 })

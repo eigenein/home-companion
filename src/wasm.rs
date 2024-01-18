@@ -1,3 +1,5 @@
+//! Convenience WASM wrappers.
+
 pub mod engine;
 pub mod instance;
 pub mod linker;

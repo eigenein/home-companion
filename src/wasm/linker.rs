@@ -22,7 +22,7 @@ impl<S: Send> Linker<S> {
         module: &Module,
     ) -> Result<Instance> {
         self.0
-            .instantiate_async(&mut store, module)
+            .instantiate_async(store.as_context_mut(), module)
             .await
             .with_context(|| format!("failed to instantiate module `{:?}`", module.name()))
             .map(Into::into)
