@@ -7,32 +7,29 @@ pub trait TryFromExtern: Sized {
     fn try_from_extern(store: impl AsContextMut, extern_: wasmtime::Extern) -> Result<Self>;
 }
 
-pub trait ExternDeclaration {
+pub trait ExternDeclaration: Sized {
     /// Type to convert native WASM extern into.
-    type Inner;
+    type Inner: TryFromExtern + Into<Self>;
 
     /// Exported name.
     const NAME: &'static str;
 }
 
 pub trait Extern<D>: Sized {
+    /// Retrieve an extern from the module instance.
     fn try_from_instance(
         store: impl AsContextMut<Data = D>,
         instance: &wasmtime::Instance,
     ) -> Result<Self>;
 
+    /// Retrieve an extern from the caller.
     fn try_from_caller(caller: &mut Caller<D>) -> Result<Self>;
-
-    fn try_from_extern(
-        store: impl AsContextMut<Data = D>,
-        extern_: wasmtime::Extern,
-    ) -> Result<Self>;
 }
 
 impl<T, D> Extern<D> for T
 where
-    T: ExternDeclaration + From<T::Inner>,
-    <T as ExternDeclaration>::Inner: TryFromExtern,
+    T: ExternDeclaration,
+    T::Inner: TryFromExtern,
 {
     fn try_from_instance(
         mut store: impl AsContextMut<Data = D>,
@@ -50,11 +47,14 @@ where
             .ok_or_else(|| anyhow!("failed to look up extern `{}`", Self::NAME))?;
         Self::try_from_extern(caller.as_context_mut(), extern_)
     }
+}
 
-    fn try_from_extern(
-        mut store: impl AsContextMut<Data = D>,
-        extern_: wasmtime::Extern,
-    ) -> Result<Self> {
+impl<T> TryFromExtern for T
+where
+    T: ExternDeclaration,
+    T::Inner: TryFromExtern,
+{
+    fn try_from_extern(mut store: impl AsContextMut, extern_: wasmtime::Extern) -> Result<Self> {
         Ok(T::Inner::try_from_extern(store.as_context_mut(), extern_)?.into())
     }
 }
