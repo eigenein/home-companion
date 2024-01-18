@@ -17,6 +17,9 @@ extern "C" {
 #[allow(improper_ctypes_definitions)]
 pub extern "C" fn init(settings: &[u8]) -> &[u8] {
     let settings: Settings = rmp_serde::from_slice(&settings).expect("failed to parse settings");
+    unsafe {
+        info("hello");
+    }
     b""
 }
 

@@ -20,7 +20,7 @@ impl Companion {
         info!("loading connections…");
 
         let engine = Engine::new_async()?;
-        let linker = engine.new_linker();
+        let linker = engine.new_linker()?;
 
         let connections: HashMap<String, Stateful> = {
             let engine = &engine;
