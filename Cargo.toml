@@ -6,6 +6,7 @@ resolver = "2"
 all = "warn"
 nursery = "warn"
 pedantic = "warn"
+module_name_repetitions = "allow"
 
 [package]
 authors = ["Pavel Perestoronin <eigenein@gmail.com>"]

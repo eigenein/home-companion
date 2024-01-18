@@ -1,10 +1,15 @@
 use std::path::Path;
 
-use wasmtime::{Caller, Config, Store};
+use tracing::Level;
+use wasmtime::{AsContext, Caller, Config, Store};
 
 use crate::{
     prelude::*,
-    wasm::{linker::Linker, memory::Memory, module::Module},
+    wasm::{
+        linker::Linker,
+        memory::{Memory, Segment},
+        module::Module,
+    },
 };
 
 /// WASM engine/linker wrapper.
@@ -29,14 +34,15 @@ impl Engine {
         Store::new(&self.0, data)
     }
 
-    pub fn new_linker<D>(&self) -> Result<Linker<D>> {
+    pub fn new_linker<D: Send>(&self) -> Result<Linker<D>> {
         let mut linker = wasmtime::Linker::<D>::new(&self.0);
         linker.func_wrap(
             "logging",
             "info",
             |mut caller: Caller<'_, D>, offset: u32, size: u32| {
-                info!(offset, size, "called `logging.info`");
-                Memory::from_export(|name| caller.get_export(name))?;
+                let message = Memory::try_from_caller(&mut caller)?
+                    .read_bytes(caller.as_context(), Segment::try_from_u32(offset, size)?)?;
+                event!(Level::INFO, "{}", String::from_utf8(message)?);
                 Ok(())
             },
         )?;
@@ -46,6 +52,6 @@ impl Engine {
     pub fn load_module(&self, path: &Path) -> Result<Module> {
         wasmtime::Module::from_file(&self.0, path)
             .with_context(|| format!("failed to load WASM module from {path:?}"))
-            .map(Into::into)
+            .map(Module)
     }
 }

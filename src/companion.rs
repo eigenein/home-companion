@@ -6,12 +6,12 @@ use wasmtime::AsContextMut;
 use crate::{
     prelude::*,
     setup::Setup,
-    wasm::{engine::Engine, instance::Connection, module::Stateful},
+    wasm::{engine::Engine, instance::Connection, module::StatefulModule},
 };
 
 /// 🚀 The Companion engine.
 pub struct Companion {
-    connections: HashMap<String, Stateful>,
+    connections: HashMap<String, StatefulModule>,
 }
 
 impl Companion {
@@ -22,7 +22,7 @@ impl Companion {
         let engine = Engine::new_async()?;
         let linker = engine.new_linker()?;
 
-        let connections: HashMap<String, Stateful> = {
+        let connections: HashMap<String, StatefulModule> = {
             let engine = &engine;
             let linker = &linker;
             stream::iter(setup.connections.into_iter())
@@ -38,10 +38,10 @@ impl Companion {
                     let mut store = engine.new_store(());
                     let instance =
                         linker.instantiate_async(store.as_context_mut(), &module).await?;
-                    let mut connection = Connection::from(instance);
+                    let mut connection = Connection(instance);
                     let state =
                         connection.call_init_async(store.as_context_mut(), settings).await?;
-                    let stateful_module = Stateful { module, state };
+                    let stateful_module = StatefulModule { module, state };
                     Ok((id, stateful_module))
                 })
                 .try_collect()

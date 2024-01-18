@@ -1,75 +1,16 @@
 use toml::Table;
 use wasmtime::{AsContextMut, TypedFunc, WasmParams, WasmResults};
 
-use crate::{helpers::serde::transcode_toml_to_message_pack, prelude::*, wasm::memory::Segment};
+use crate::{
+    helpers::serde::transcode_toml_to_message_pack,
+    prelude::*,
+    wasm::memory::{Memory, Segment},
+};
 
-pub struct Instance(wasmtime::Instance);
-
-impl From<wasmtime::Instance> for Instance {
-    fn from(inner: wasmtime::Instance) -> Self {
-        Self(inner)
-    }
-}
+pub struct Instance(pub wasmtime::Instance);
 
 impl Instance {
-    #[allow(clippy::future_not_send)]
-    pub fn read_bytes<D: Send>(
-        &self,
-        mut store: impl AsContextMut<Data = D>,
-        segment: Segment,
-    ) -> Result<Vec<u8>> {
-        let mut buffer = Vec::with_capacity(segment.size);
-        if !buffer.is_empty() {
-            self.0
-                .get_memory(store.as_context_mut(), "memory")
-                .ok_or_else(|| anyhow!("module  does not export `memory`"))?
-                .read(store.as_context(), segment.offset, &mut buffer)
-                .context("failed to read the instance's memory")?;
-        }
-        Ok(buffer)
-    }
-
-    /// Write the byte string into the instance's memory.
-    ///
-    /// Byte buffer is automatically allocated in the instance's memory.
-    /// The module **must** export `memory` and `alloc()` function.
-    ///
-    /// # Returns
-    ///
-    /// Buffer offset.
-    #[allow(clippy::future_not_send)]
-    pub async fn write_bytes<D: Send>(
-        &mut self,
-        mut store: impl AsContextMut<Data = D>,
-        value: &[u8],
-    ) -> Result<Segment> {
-        let offset = self
-            .alloc(store.as_context_mut(), value.len())
-            .await
-            .context("failed to allocate memory")?;
-        self.0
-            .get_memory(store.as_context_mut(), "memory")
-            .ok_or_else(|| anyhow!("module does not export `memory`"))?
-            .write(store.as_context_mut(), offset, value)
-            .context("failed to write the buffer into the instance's memory")?;
-        Ok(Segment::new(offset, value.len()))
-    }
-
-    /// Allocate a buffer of `size` bytes in the instance's memory.
-    ///
-    /// # Returns
-    ///
-    /// Offset of the allocated buffer.
-    #[allow(clippy::future_not_send)]
-    async fn alloc<S: Send>(
-        &self,
-        store: impl AsContextMut<Data = S>,
-        size: usize,
-    ) -> Result<usize> {
-        let offset: u32 = self.call_typed_func_async(store, "alloc", u32::try_from(size)?).await?;
-        Ok(usize::try_from(offset)?)
-    }
-
+    #[deprecated]
     #[allow(clippy::future_not_send)]
     async fn call_typed_func_async<S: Send, P: WasmParams, R: WasmResults>(
         &self,
@@ -89,13 +30,7 @@ impl Instance {
 }
 
 /// Companion's service connection via WASM module instance.
-pub struct Connection(Instance);
-
-impl From<Instance> for Connection {
-    fn from(instance: Instance) -> Self {
-        Self(instance)
-    }
-}
+pub struct Connection(pub Instance);
 
 impl Connection {
     /// Call the module's `init(i32, i32) -> (i32, i32)`.
@@ -116,11 +51,12 @@ impl Connection {
         settings: Table,
     ) -> Result<Vec<u8>> {
         let settings = transcode_toml_to_message_pack(settings)?;
-        let segment = self.0.write_bytes(store.as_context_mut(), &settings).await?;
+        let memory = Memory::try_from_instance(store.as_context_mut(), &self.0.0)?;
+        let segment = memory.write_bytes(store.as_context_mut(), &settings).await?;
         let (offset, size): (u32, u32) = self
             .0
             .call_typed_func_async(store.as_context_mut(), "init", segment.as_tuple_u32()?)
             .await?;
-        self.0.read_bytes(store.as_context_mut(), Segment::from_u32(offset, size)?)
+        memory.read_bytes(store.as_context_mut(), Segment::try_from_u32(offset, size)?)
     }
 }
