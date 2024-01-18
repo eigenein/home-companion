@@ -33,9 +33,8 @@ impl Connection {
     ) -> Result<Vec<u8>> {
         let settings = transcode_toml_to_message_pack(settings)?;
         let memory = Memory::try_from_instance(store.as_context_mut(), &self.0.0)?;
-        let settings_segment = memory.write_bytes(store.as_context_mut(), &settings).await?;
-        let init_func = InitFunction::try_from_instance(store.as_context_mut(), &self.0.0)?;
-        let state_segment = init_func.call_async(store.as_context_mut(), settings_segment).await?;
-        memory.read_bytes(store.as_context_mut(), state_segment)
+        InitFunction::try_from_instance(store.as_context_mut(), &self.0.0)?
+            .call_async(store.as_context_mut(), &memory, &settings)
+            .await
     }
 }

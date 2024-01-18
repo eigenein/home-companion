@@ -4,7 +4,7 @@ use crate::{
     prelude::*,
     wasm::{
         r#extern::{ExternDeclaration, TryFromExtern},
-        memory::Segment,
+        memory::{Memory, Segment},
     },
 };
 
@@ -76,17 +76,22 @@ impl ExternDeclaration for InitFunction {
 }
 
 impl InitFunction {
+    /// # Parameters
+    ///
+    /// MessagePack-encoded connection settings.
     pub async fn call_async<D: Send>(
         &self,
         mut store: impl AsContextMut<Data = D>,
-        settings_segment: Segment,
-    ) -> Result<Segment> {
+        memory: &Memory,
+        settings: &[u8],
+    ) -> Result<Vec<u8>> {
+        let params = memory.write_bytes(store.as_context_mut(), settings).await?.as_tuple_u32()?;
         let (state_offset, size_offset) = self
             .0
             .0
-            .call_async(store.as_context_mut(), settings_segment.as_tuple_u32()?)
+            .call_async(store.as_context_mut(), params)
             .await
             .context("failed to call `init()`")?;
-        Segment::try_from_u32(state_offset, size_offset)
+        memory.read_bytes(store.as_context_mut(), Segment::try_from_u32(state_offset, size_offset)?)
     }
 }
