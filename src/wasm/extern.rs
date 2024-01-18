@@ -15,24 +15,23 @@ pub trait ExternDeclaration: Sized {
     const NAME: &'static str;
 }
 
-pub trait Extern<D>: Sized {
+pub trait TryFromInstance: Sized {
     /// Retrieve an extern from the module instance.
-    fn try_from_instance(
-        store: impl AsContextMut<Data = D>,
-        instance: &wasmtime::Instance,
-    ) -> Result<Self>;
+    fn try_from_instance(store: impl AsContextMut, instance: &wasmtime::Instance) -> Result<Self>;
+}
 
+pub trait TryFromCaller<D>: Sized {
     /// Retrieve an extern from the caller.
     fn try_from_caller(caller: &mut Caller<D>) -> Result<Self>;
 }
 
-impl<T, D> Extern<D> for T
+impl<T> TryFromInstance for T
 where
     T: ExternDeclaration,
     T::Inner: TryFromExtern,
 {
     fn try_from_instance(
-        mut store: impl AsContextMut<Data = D>,
+        mut store: impl AsContextMut,
         instance: &wasmtime::Instance,
     ) -> Result<Self> {
         let extern_ = instance
@@ -40,7 +39,13 @@ where
             .ok_or_else(|| anyhow!("failed to look up extern `{}`", Self::NAME))?;
         Self::try_from_extern(store.as_context_mut(), extern_)
     }
+}
 
+impl<T, D> TryFromCaller<D> for T
+where
+    T: ExternDeclaration,
+    T::Inner: TryFromExtern,
+{
     fn try_from_caller(caller: &mut Caller<D>) -> Result<Self> {
         let extern_ = caller
             .get_export(Self::NAME)

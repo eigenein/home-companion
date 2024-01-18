@@ -4,7 +4,7 @@ use wasmtime::AsContextMut;
 use crate::{
     helpers::serde::transcode_toml_to_message_pack,
     prelude::*,
-    wasm::{r#extern::Extern, function::InitFunction, memory::Memory},
+    wasm::{r#extern::TryFromInstance, function::InitFunction, memory::Memory},
 };
 
 #[derive(derive_more::From, derive_more::AsRef)]

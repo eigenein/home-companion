@@ -2,7 +2,10 @@ use wasmtime::{AsContext, AsContextMut, Caller};
 
 use crate::{
     prelude::*,
-    wasm::{r#extern::Extern, function::AllocFunction},
+    wasm::{
+        r#extern::{TryFromCaller, TryFromInstance},
+        function::AllocFunction,
+    },
 };
 
 pub struct Memory(wasmtime::Memory, AllocFunction);
