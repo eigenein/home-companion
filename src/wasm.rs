@@ -1,6 +1,7 @@
 //! Convenience WASM wrappers.
 
 pub mod engine;
+pub mod r#extern;
 pub mod function;
 pub mod instance;
 pub mod linker;

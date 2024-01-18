@@ -1,47 +1,23 @@
 use wasmtime::{AsContext, AsContextMut, Extern, WasmParams, WasmResults};
 
-use crate::{prelude::*, wasm::memory::Segment};
+use crate::{
+    prelude::*,
+    wasm::{
+        r#extern::{ExternDeclaration, TryFromExtern},
+        memory::Segment,
+    },
+};
 
 pub struct TypedFunction<Params, Results>(wasmtime::TypedFunc<Params, Results>);
 
-impl<Params: WasmParams, Results: WasmResults> TypedFunction<Params, Results> {
-    pub fn try_from_extern<D>(
-        store: impl AsContext<Data = D>,
-        extern_: Option<Extern>,
-    ) -> Result<Self> {
+impl<Params: WasmParams, Results: WasmResults> TryFromExtern for TypedFunction<Params, Results> {
+    fn try_from_extern(store: impl AsContext, extern_: Extern) -> Result<Self> {
         extern_
-            .ok_or_else(|| anyhow!("function is not exported"))?
             .into_func()
             .ok_or_else(|| anyhow!("the export is not a function"))?
             .typed(store.as_context())
             .context("failed to extract a typed function")
             .map(Self)
-    }
-
-    pub fn try_from_instance<D>(
-        mut store: impl AsContextMut<Data = D>,
-        instance: &wasmtime::Instance,
-        name: &str,
-    ) -> Result<Self> {
-        let extern_ = instance.get_export(store.as_context_mut(), name);
-        Self::try_from_extern(store.as_context(), extern_)
-            .with_context(|| format!("failed to extract a typed function `{name}`"))
-    }
-}
-
-pub trait TryFromInstance<Params, Results>: From<TypedFunction<Params, Results>>
-where
-    Params: WasmParams,
-    Results: WasmResults,
-{
-    const NAME: &'static str;
-
-    fn try_from_instance<D>(
-        mut store: impl AsContextMut<Data = D>,
-        instance: &wasmtime::Instance,
-    ) -> Result<Self> {
-        TypedFunction::try_from_instance(store.as_context_mut(), instance, Self::NAME)
-            .map(Self::from)
     }
 }
 
@@ -57,7 +33,9 @@ where
 #[derive(derive_more::From)]
 pub struct AllocFunction(TypedFunction<(u32,), u32>);
 
-impl TryFromInstance<(u32,), u32> for AllocFunction {
+impl ExternDeclaration for AllocFunction {
+    type Inner = TypedFunction<(u32,), u32>;
+
     const NAME: &'static str = "alloc";
 }
 
@@ -91,7 +69,9 @@ impl AllocFunction {
 #[derive(derive_more::From)]
 pub struct InitFunction(TypedFunction<(u32, u32), (u32, u32)>);
 
-impl TryFromInstance<(u32, u32), (u32, u32)> for InitFunction {
+impl ExternDeclaration for InitFunction {
+    type Inner = TypedFunction<(u32, u32), (u32, u32)>;
+
     const NAME: &'static str = "init";
 }
 

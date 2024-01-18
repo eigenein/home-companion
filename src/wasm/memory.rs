@@ -1,31 +1,25 @@
-use wasmtime::{AsContext, AsContextMut, Caller, Extern};
+use wasmtime::{AsContext, AsContextMut, Caller};
 
 use crate::{
     prelude::*,
-    wasm::function::{AllocFunction, TypedFunction},
+    wasm::{r#extern::Extern, function::AllocFunction},
 };
 
 pub struct Memory(wasmtime::Memory, AllocFunction);
 
 impl Memory {
-    fn try_from_extern<D>(
-        store: impl AsContext<Data = D>,
-        memory_extern: Option<Extern>,
-        alloc_extern: Option<Extern>,
-    ) -> Result<Self> {
+    fn new<D>(memory_extern: Option<wasmtime::Extern>, alloc: AllocFunction) -> Result<Self> {
         let inner = memory_extern
             .ok_or_else(|| anyhow!("module does not export `memory`"))?
             .into_memory()
             .ok_or_else(|| anyhow!("`memory` export is not a memory"))?;
-        let alloc =
-            AllocFunction::from(TypedFunction::try_from_extern(store.as_context(), alloc_extern)?);
         Ok(Self(inner, alloc))
     }
 
     pub fn try_from_caller<D>(caller: &mut Caller<'_, D>) -> Result<Self> {
         let memory_extern = caller.get_export("memory");
-        let alloc_extern = caller.get_export("alloc");
-        Self::try_from_extern(caller.as_context(), memory_extern, alloc_extern)
+        let alloc = AllocFunction::try_from_caller(caller)?;
+        Self::new::<D>(memory_extern, alloc)
     }
 
     pub fn try_from_instance<D>(
@@ -33,8 +27,8 @@ impl Memory {
         instance: &wasmtime::Instance,
     ) -> Result<Self> {
         let memory_extern = instance.get_export(store.as_context_mut(), "memory");
-        let alloc_extern = instance.get_export(store.as_context_mut(), "alloc");
-        Self::try_from_extern(store.as_context(), memory_extern, alloc_extern)
+        let alloc = AllocFunction::try_from_instance(store.as_context_mut(), &instance)?;
+        Self::new::<D>(memory_extern, alloc)
     }
 
     pub fn read_bytes<D: Send>(
