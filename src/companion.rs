@@ -6,7 +6,7 @@ use wasmtime::AsContextMut;
 use crate::{
     prelude::*,
     setup::Setup,
-    wasm::{engine::Engine, instance::Connection, module::StatefulModule},
+    wasm::{connection::Connection, engine::Engine, module::StatefulModule},
 };
 
 /// 🚀 The Companion engine.

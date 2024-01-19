@@ -1,5 +1,6 @@
 //! Convenience WASM wrappers.
 
+pub mod connection;
 pub mod engine;
 pub mod r#extern;
 pub mod function;

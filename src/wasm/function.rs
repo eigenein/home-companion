@@ -8,9 +8,11 @@ use crate::{
     },
 };
 
-pub struct TypedFunction<Params, Results>(wasmtime::TypedFunc<Params, Results>);
+pub struct TypedGuestFunction<Params, Results>(wasmtime::TypedFunc<Params, Results>);
 
-impl<Params: WasmParams, Results: WasmResults> TryFromExtern for TypedFunction<Params, Results> {
+impl<Params: WasmParams, Results: WasmResults> TryFromExtern
+    for TypedGuestFunction<Params, Results>
+{
     fn try_from_extern(store: impl AsContext, extern_: Extern) -> Result<Self> {
         extern_
             .into_func()
@@ -31,10 +33,10 @@ impl<Params: WasmParams, Results: WasmResults> TryFromExtern for TypedFunction<P
 ///
 /// Offset of an allocated block.
 #[derive(derive_more::From)]
-pub struct AllocFunction(TypedFunction<(u32,), u32>);
+pub struct AllocFunction(TypedGuestFunction<(u32,), u32>);
 
 impl ExternDeclaration for AllocFunction {
-    type Inner = TypedFunction<(u32,), u32>;
+    type Inner = TypedGuestFunction<(u32,), u32>;
 
     const NAME: &'static str = "alloc";
 }
@@ -67,15 +69,15 @@ impl AllocFunction {
 ///
 /// Byte string, returned by the `init()`.
 #[derive(derive_more::From)]
-pub struct InitFunction(TypedFunction<(u32, u32), (u32, u32)>);
+pub struct InitGuestFunction(TypedGuestFunction<(u32, u32), (u32, u32)>);
 
-impl ExternDeclaration for InitFunction {
-    type Inner = TypedFunction<(u32, u32), (u32, u32)>;
+impl ExternDeclaration for InitGuestFunction {
+    type Inner = TypedGuestFunction<(u32, u32), (u32, u32)>;
 
     const NAME: &'static str = "init";
 }
 
-impl InitFunction {
+impl InitGuestFunction {
     /// # Parameters
     ///
     /// MessagePack-encoded connection settings.
