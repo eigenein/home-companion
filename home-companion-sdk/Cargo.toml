@@ -1,0 +1,14 @@
+[package]
+authors.workspace = true
+description = "SDK for Companion modules"
+edition = "2021"
+name = "home-companion-sdk"
+version.workspace = true
+
+[lib]
+crate-type = ["lib"]
+
+[lints]
+workspace = true
+
+[dependencies]
