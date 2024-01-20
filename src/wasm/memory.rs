@@ -1,4 +1,4 @@
-use wasmtime::{AsContext, AsContextMut, Caller};
+use wasmtime::{AsContext, AsContextMut, Caller, Instance};
 
 use crate::{
     prelude::*,
@@ -11,6 +11,22 @@ use crate::{
 /// WASM guest memory wrapper.
 pub struct Memory(wasmtime::Memory, AllocFunction);
 
+impl<D> TryFromCaller<D> for Memory {
+    fn try_from_caller(caller: &mut Caller<'_, D>) -> Result<Self> {
+        let memory_extern = caller.get_export("memory");
+        let alloc = AllocFunction::try_from_caller(caller)?;
+        Self::new(memory_extern, alloc)
+    }
+}
+
+impl TryFromInstance for Memory {
+    fn try_from_instance(mut store: impl AsContextMut, instance: &Instance) -> Result<Self> {
+        let memory_extern = instance.get_export(store.as_context_mut(), "memory");
+        let alloc = AllocFunction::try_from_instance(store.as_context_mut(), instance)?;
+        Self::new(memory_extern, alloc)
+    }
+}
+
 impl Memory {
     fn new(memory_extern: Option<wasmtime::Extern>, alloc: AllocFunction) -> Result<Self> {
         let inner = memory_extern
@@ -18,21 +34,6 @@ impl Memory {
             .into_memory()
             .ok_or_else(|| anyhow!("`memory` export is not a memory"))?;
         Ok(Self(inner, alloc))
-    }
-
-    pub fn try_from_caller<D>(caller: &mut Caller<'_, D>) -> Result<Self> {
-        let memory_extern = caller.get_export("memory");
-        let alloc = AllocFunction::try_from_caller(caller)?;
-        Self::new(memory_extern, alloc)
-    }
-
-    pub fn try_from_instance<D>(
-        mut store: impl AsContextMut<Data = D>,
-        instance: &wasmtime::Instance,
-    ) -> Result<Self> {
-        let memory_extern = instance.get_export(store.as_context_mut(), "memory");
-        let alloc = AllocFunction::try_from_instance(store.as_context_mut(), instance)?;
-        Self::new(memory_extern, alloc)
     }
 
     pub fn read_bytes_from_caller<D: Send>(
@@ -66,14 +67,10 @@ impl Memory {
         Ok(buffer)
     }
 
-    /// Write the byte string into the instance's memory.
+    /// Write the byte string into the instance's memory and return the string buffer offset.
     ///
     /// Byte buffer is automatically allocated in the instance's memory.
     /// The module **must** export `memory` and `alloc()` function.
-    ///
-    /// # Returns
-    ///
-    /// Buffer offset.
     pub async fn write_bytes<D: Send>(
         &self,
         mut store: impl AsContextMut<Data = D>,

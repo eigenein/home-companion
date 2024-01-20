@@ -3,11 +3,12 @@ use wasmtime::{AsContext, AsContextMut, Extern, WasmParams, WasmResults};
 use crate::{
     prelude::*,
     wasm::{
-        r#extern::{ExternDeclaration, TryFromExtern},
+        r#extern::{ExternName, TryFromExtern, WrapExtern},
         memory::{Memory, Segment},
     },
 };
 
+/// Generic typed guest function wrapper.
 pub struct TypedGuestFunction<Params, Results>(wasmtime::TypedFunc<Params, Results>);
 
 impl<Params: WasmParams, Results: WasmResults> TryFromExtern
@@ -23,22 +24,16 @@ impl<Params: WasmParams, Results: WasmResults> TryFromExtern
     }
 }
 
-/// Allocate memory.
-///
-/// # Params
-///
-/// Number of bytes to allocate.
-///
-/// # Returns
-///
-/// Offset of an allocated block.
+/// Allocate memory block of the specified size and return the block offset.
 #[derive(derive_more::From)]
 pub struct AllocFunction(TypedGuestFunction<(u32,), u32>);
 
-impl ExternDeclaration for AllocFunction {
-    type Inner = TypedGuestFunction<(u32,), u32>;
-
+impl ExternName for AllocFunction {
     const NAME: &'static str = "alloc";
+}
+
+impl WrapExtern for AllocFunction {
+    type Inner = TypedGuestFunction<(u32,), u32>;
 }
 
 impl AllocFunction {
@@ -59,28 +54,22 @@ impl AllocFunction {
 
 /// Call the module's `init(i32, i32) -> (i32, i32)`.
 ///
-/// The `init()` must accept a MessagePack-encoded byte string (address and length),
-/// and return a Protocol Buffers-encoded state byte string. Companion will allocate and write
-/// the string to the memory prior to calling the `init()`.
+/// The `init()` must accept a MessagePack-encoded settings, and return a state byte string.
 ///
 /// Return length may be equal to `0` – in that case, Companion does not need access to the memory.
-///
-/// # Returns
-///
-/// Byte string, returned by the `init()`.
 #[derive(derive_more::From)]
 pub struct InitGuestFunction(TypedGuestFunction<(u32, u32), (u32, u32)>);
 
-impl ExternDeclaration for InitGuestFunction {
-    type Inner = TypedGuestFunction<(u32, u32), (u32, u32)>;
-
+impl ExternName for InitGuestFunction {
     const NAME: &'static str = "init";
 }
 
+impl WrapExtern for InitGuestFunction {
+    type Inner = TypedGuestFunction<(u32, u32), (u32, u32)>;
+}
+
 impl InitGuestFunction {
-    /// # Parameters
-    ///
-    /// MessagePack-encoded connection settings.
+    /// Initialize the guest. Accepts MessagePack-encoded settings and returns a binary state.
     pub async fn call_async<D: Send>(
         &self,
         mut store: impl AsContextMut<Data = D>,
