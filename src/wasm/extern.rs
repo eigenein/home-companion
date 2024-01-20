@@ -25,11 +25,7 @@ pub trait TryFromCaller<D>: Sized {
     fn try_from_caller(caller: &mut Caller<D>) -> Result<Self>;
 }
 
-impl<T> TryFromInstance for T
-where
-    T: ExternDeclaration,
-    T::Inner: TryFromExtern,
-{
+impl<T: ExternDeclaration> TryFromInstance for T {
     fn try_from_instance(
         mut store: impl AsContextMut,
         instance: &wasmtime::Instance,
@@ -41,11 +37,7 @@ where
     }
 }
 
-impl<T, D> TryFromCaller<D> for T
-where
-    T: ExternDeclaration,
-    T::Inner: TryFromExtern,
-{
+impl<T: ExternDeclaration, D> TryFromCaller<D> for T {
     fn try_from_caller(caller: &mut Caller<D>) -> Result<Self> {
         let extern_ = caller
             .get_export(Self::NAME)
@@ -54,11 +46,7 @@ where
     }
 }
 
-impl<T> TryFromExtern for T
-where
-    T: ExternDeclaration,
-    T::Inner: TryFromExtern,
-{
+impl<T: ExternDeclaration> TryFromExtern for T {
     fn try_from_extern(mut store: impl AsContextMut, extern_: wasmtime::Extern) -> Result<Self> {
         Ok(T::Inner::try_from_extern(store.as_context_mut(), extern_)?.into())
     }
