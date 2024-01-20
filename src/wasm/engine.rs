@@ -4,6 +4,7 @@ use wasmtime::{Config, Store};
 
 use crate::{
     prelude::*,
+    wasm,
     wasm::{linker::Linker, module::Module},
 };
 
@@ -25,7 +26,9 @@ impl Engine {
     }
 
     pub fn new_linker<D: Send>(&self) -> Result<Linker<D>> {
-        Linker::new(wasmtime::Linker::<D>::new(&self.0))
+        let mut linker = Linker::from(wasmtime::Linker::<D>::new(&self.0));
+        wasm::logging::add_to_linker(linker.as_mut())?;
+        Ok(linker)
     }
 
     pub fn load_module(&self, path: &Path) -> Result<Module> {

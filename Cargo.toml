@@ -1,21 +1,27 @@
 [workspace]
-members = ["connections/youless"]
+members = ["connections/youless", "home-companion-sdk"]
 resolver = "2"
+
+[workspace.package]
+authors = ["Pavel Perestoronin <eigenein@gmail.com>"]
+version = "0.0.1"
+
+[workspace.lints.rust]
+improper_ctypes = "allow"
+improper_ctypes_definitions = "allow"
 
 [workspace.lints.clippy]
 all = "warn"
 nursery = "warn"
 pedantic = "warn"
-module_name_repetitions = "allow"
 future_not_send = "allow"
+module_name_repetitions = "allow"
 
 [package]
-authors = ["Pavel Perestoronin <eigenein@gmail.com>"]
 description = "Experimental smart home assistant based on WASM plugins"
 edition = "2021"
 keywords = ["smart-home", "wasm"]
 name = "home-companion"
-version = "0.0.1"
 
 [badges]
 is-it-maintained-issue-resolution = { repository = "eigenein/home-companion" }
