@@ -36,7 +36,7 @@ impl<T: ExternName + TryFromExtern> TryFromInstance for T {
     ) -> Result<Self> {
         let extern_ = instance
             .get_export(store.as_context_mut(), Self::NAME)
-            .ok_or_else(|| anyhow!("failed to look up extern `{}`", Self::NAME))?;
+            .ok_or_else(|| anyhow!("failed to look up instance's extern `{}`", Self::NAME))?;
         Self::try_from_extern(store.as_context_mut(), extern_)
     }
 }
@@ -50,7 +50,7 @@ impl<T: ExternName + TryFromExtern, D> TryFromCaller<D> for T {
     fn try_from_caller(caller: &mut Caller<D>) -> Result<Self> {
         let extern_ = caller
             .get_export(Self::NAME)
-            .ok_or_else(|| anyhow!("failed to look up extern `{}`", Self::NAME))?;
+            .ok_or_else(|| anyhow!("failed to look up caller's extern `{}`", Self::NAME))?;
         Self::try_from_extern(caller.as_context_mut(), extern_)
     }
 }

@@ -6,7 +6,9 @@ use wasmtime::AsContextMut;
 use crate::{
     prelude::*,
     setup::Setup,
-    wasm::{connection::Connection, engine::Engine, module::StatefulModule},
+    wasm::{
+        connection::Connection, engine::Engine, module::StatefulModule, state::HostInstanceState,
+    },
 };
 
 /// 🚀 The Companion engine.
@@ -35,7 +37,7 @@ impl Companion {
                     ))
                 })
                 .and_then(|(id, module, settings)| async move {
-                    let mut store = engine.new_store(());
+                    let mut store = engine.new_store(HostInstanceState::for_connection(&id, ()));
                     let instance =
                         linker.instantiate_async(store.as_context_mut(), &module).await?;
                     let state = Connection::from(instance)

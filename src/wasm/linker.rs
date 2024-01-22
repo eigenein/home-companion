@@ -8,12 +8,12 @@ use crate::{
 #[derive(derive_more::From, derive_more::AsMut, derive_more::AsRef)]
 pub struct Linker<T = ()>(wasmtime::Linker<T>);
 
-impl<S: Send> Linker<S> {
+impl<D: Send> Linker<D> {
     /// Instantiate the module.
     #[instrument(skip_all)]
     pub async fn instantiate_async(
         &self,
-        mut store: impl AsContextMut<Data = S>,
+        mut store: impl AsContextMut<Data = D>,
         module: &Module,
     ) -> Result<Instance> {
         self.0
