@@ -28,7 +28,7 @@ async fn main() -> Result {
             let setup = Setup::from_file(&setup_path)?;
             Companion::from_setup(setup)
                 .await
-                .context("failed to create Companion engine")?;
+                .context("failed to create a Companion engine")?;
             Ok(())
         }
     }

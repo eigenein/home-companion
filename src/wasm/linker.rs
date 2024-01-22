@@ -6,6 +6,7 @@ use crate::{
 };
 
 #[derive(derive_more::From, derive_more::AsMut, derive_more::AsRef)]
+#[must_use]
 pub struct Linker<T = ()>(wasmtime::Linker<T>);
 
 impl<D: Send> Linker<D> {
@@ -19,7 +20,7 @@ impl<D: Send> Linker<D> {
         self.0
             .instantiate_async(store.as_context_mut(), module.as_ref())
             .await
-            .with_context(|| format!("failed to instantiate module `{:?}`", module.as_ref().name()))
+            .context("failed to instantiate the module")
             .map(Instance::from)
     }
 }

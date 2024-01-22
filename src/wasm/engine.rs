@@ -10,6 +10,7 @@ use crate::{
 
 /// WASM engine/linker wrapper.
 #[derive(derive_more::From)]
+#[must_use]
 pub struct Engine(wasmtime::Engine);
 
 impl Engine {

@@ -12,3 +12,5 @@ crate-type = ["lib"]
 workspace = true
 
 [dependencies]
+anyhow = "1.0.79"
+derive_more = { version = "1.0.0-beta.6", features = ["from", "into"] }

@@ -1,5 +1,0 @@
-[target.wasm32-unknown-unknown]
-rustflags = ["-C", "target-feature=+multivalue"]
-
-[target.wasm32-wasi]
-rustflags = ["-C", "target-feature=+multivalue"]

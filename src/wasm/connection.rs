@@ -11,6 +11,7 @@ use crate::{
 
 /// Companion's service connection via WASM module instance.
 #[derive(derive_more::From, derive_more::AsRef)]
+#[must_use]
 pub struct Connection(Instance);
 
 impl Connection {

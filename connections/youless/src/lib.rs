@@ -1,21 +1,33 @@
-use home_companion_sdk::logging::info;
-use prost::Message;
-use serde::Deserialize;
+mod models;
+
+use anyhow::{Context, Result};
+use home_companion_sdk::{error::LoggedUnwrap, logging::info, memory::Segment};
+
+use crate::models::{Counters, Settings};
 
 #[no_mangle]
 pub extern "C" fn alloc(size: usize) -> *mut u8 {
-    home_companion_sdk::alloc(size)
+    home_companion_sdk::memory::alloc(size)
 }
 
 #[no_mangle]
-pub extern "C" fn init(settings: &[u8]) -> &[u8] {
-    let settings: Settings = rmp_serde::from_slice(&settings).expect("failed to parse settings");
-    info(&format!("initializing, hostname = `{}`…", settings.host));
-    b""
+pub extern "C" fn init(settings: Segment) -> Segment {
+    let settings: Settings =
+        rmp_serde::from_slice(settings.try_into().unwrap()).expect("failed to parse settings");
+    let url = format!("http://{}/e", settings.host);
+
+    info(&format!("checking YouLess at `{url}`…"));
+    request_counters(&url)
+        .with_context(|| format!("failed to request YouLess at `{url}`"))
+        .unwrap_logged();
+
+    Segment::try_from(b"".as_slice()).unwrap()
 }
 
-#[derive(Deserialize, Message)]
-struct Settings {
-    #[prost(string, tag = "1", required)]
-    host: String,
+fn request_counters(url: &str) -> Result<Counters> {
+    ureq::get(url)
+        .call()
+        .context("failed to call the YouLess")?
+        .into_json()
+        .context("failed to deserialize YouLess response")
 }

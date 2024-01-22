@@ -1,8 +1,10 @@
 #[derive(Debug)]
+#[must_use]
 pub enum InstanceId {
     Connection(String),
 }
 
+#[must_use]
 pub struct HostInstanceState<D> {
     pub id: InstanceId,
     pub data: D,

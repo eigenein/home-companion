@@ -1,3 +1,4 @@
+use home_companion_sdk::memory::Segment;
 use wasmtime::{AsContext, AsContextMut, Caller, Instance};
 
 use crate::{
@@ -9,6 +10,7 @@ use crate::{
 };
 
 /// WASM guest memory wrapper.
+#[must_use]
 pub struct Memory(wasmtime::Memory, AllocFunction);
 
 impl<D> TryFromCaller<D> for Memory {
@@ -38,19 +40,16 @@ impl Memory {
 
     pub fn read_bytes_from_caller<D: Send>(
         caller: &mut Caller<'_, D>,
-        offset: u32,
-        size: u32,
+        segment: Segment,
     ) -> Result<Vec<u8>> {
-        Self::try_from_caller(caller)?
-            .read_bytes(caller.as_context(), Segment::try_from_u32(offset, size)?)
+        Self::try_from_caller(caller)?.read_bytes(caller.as_context(), segment)
     }
 
     pub fn read_string_from_caller<D: Send>(
         caller: &mut Caller<'_, D>,
-        offset: u32,
-        size: u32,
+        segment: Segment,
     ) -> Result<String> {
-        Ok(String::from_utf8(Self::read_bytes_from_caller(caller, offset, size)?)?)
+        Ok(String::from_utf8(Self::read_bytes_from_caller(caller, segment)?)?)
     }
 
     pub fn read_bytes<D: Send>(
@@ -58,11 +57,12 @@ impl Memory {
         store: impl AsContext<Data = D>,
         segment: Segment,
     ) -> Result<Vec<u8>> {
-        let mut buffer = vec![0; segment.size];
-        if segment.size != 0 {
-            self.0
-                .read(store.as_context(), segment.offset, &mut buffer)
-                .context("failed to read the instance's memory")?;
+        let (offset, size) = segment.split()?;
+        let mut buffer = vec![0; size];
+        if size != 0 {
+            self.0.read(store.as_context(), offset, &mut buffer).with_context(|| {
+                format!("failed to read `{size}` bytes from the memory at offset `{offset}`")
+            })?;
         }
         Ok(buffer)
     }
@@ -80,30 +80,6 @@ impl Memory {
         self.0
             .write(store.as_context_mut(), offset, value)
             .context("failed to write the buffer into the instance's memory")?;
-        Ok(Segment::new(offset, value.len()))
-    }
-}
-
-/// Reference to a continuous segment of WASM instance's memory.
-#[derive(Copy, Clone)]
-pub struct Segment {
-    pub offset: usize,
-    pub size: usize,
-}
-
-impl Segment {
-    pub const fn new(offset: usize, size: usize) -> Self {
-        Self { offset, size }
-    }
-
-    pub fn try_from_u32(offset: u32, size: u32) -> Result<Self> {
-        Ok(Self {
-            offset: usize::try_from(offset)?,
-            size: usize::try_from(size)?,
-        })
-    }
-
-    pub fn as_tuple_u32(self) -> Result<(u32, u32)> {
-        Ok((u32::try_from(self.offset)?, u32::try_from(self.size)?))
+        Segment::new(offset, value.len()).context("failed to pack the buffer size and offset")
     }
 }

@@ -4,11 +4,12 @@ use crate::{
     prelude::*,
     wasm::{
         r#extern::{ExternName, TryFromExtern, WrapExtern},
-        memory::{Memory, Segment},
+        memory::Memory,
     },
 };
 
 /// Generic typed guest function wrapper.
+#[must_use]
 pub struct TypedGuestFunction<Params, Results>(wasmtime::TypedFunc<Params, Results>);
 
 impl<Params: WasmParams, Results: WasmResults> TryFromExtern
@@ -26,6 +27,7 @@ impl<Params: WasmParams, Results: WasmResults> TryFromExtern
 
 /// Allocate memory block of the specified size and return the block offset.
 #[derive(derive_more::From)]
+#[must_use]
 pub struct AllocFunction(TypedGuestFunction<(u32,), u32>);
 
 impl ExternName for AllocFunction {
@@ -52,20 +54,19 @@ impl AllocFunction {
     }
 }
 
-/// Call the module's `init(i32, i32) -> (i32, i32)`.
+/// Call the module's `init(i64) -> i64`.
 ///
 /// The `init()` must accept a MessagePack-encoded settings, and return a state byte string.
-///
-/// Return length may be equal to `0` – in that case, Companion does not need access to the memory.
 #[derive(derive_more::From)]
-pub struct InitGuestFunction(TypedGuestFunction<(u32, u32), (u32, u32)>);
+#[must_use]
+pub struct InitGuestFunction(TypedGuestFunction<(u64,), u64>);
 
 impl ExternName for InitGuestFunction {
     const NAME: &'static str = "init";
 }
 
 impl WrapExtern for InitGuestFunction {
-    type Inner = TypedGuestFunction<(u32, u32), (u32, u32)>;
+    type Inner = TypedGuestFunction<(u64,), u64>;
 }
 
 impl InitGuestFunction {
@@ -76,13 +77,13 @@ impl InitGuestFunction {
         memory: &Memory,
         settings: &[u8],
     ) -> Result<Vec<u8>> {
-        let params = memory.write_bytes(store.as_context_mut(), settings).await?.as_tuple_u32()?;
-        let (state_offset, size_offset) = self
+        let segment = memory.write_bytes(store.as_context_mut(), settings).await?;
+        let segment = self
             .0
             .0
-            .call_async(store.as_context_mut(), params)
+            .call_async(store.as_context_mut(), (segment.into(),))
             .await
             .context("failed to call `init()`")?;
-        memory.read_bytes(store.as_context_mut(), Segment::try_from_u32(state_offset, size_offset)?)
+        memory.read_bytes(store.as_context_mut(), segment.into())
     }
 }
