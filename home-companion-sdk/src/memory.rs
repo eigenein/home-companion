@@ -20,24 +20,31 @@ pub fn alloc(size: usize) -> *mut u8 {
 pub struct Segment(u64);
 
 impl Segment {
-    /// Pack offset and size into a single 128-bit slice reference.
-    pub fn new(offset: usize, size: usize) -> Result<Self, TryFromIntError> {
-        Ok(Self(u64::from(u32::try_from(offset)?) | u64::from(u32::try_from(size)?) << 32))
+    /// Pack offset and size into a single 64-bit slice reference.
+    pub const fn new(offset: u32, size: u32) -> Self {
+        Self(offset as u64 | (size as u64) << 32)
     }
 
     /// Split the packed slice reference into separate offset and size.
-    #[allow(clippy::cast_possible_truncation)]
-    pub fn split(self) -> Result<(usize, usize), TryFromIntError> {
-        let (offset, size) = (self.0 as u32, (self.0 >> 32) as u32);
-        Ok((offset.try_into()?, size.try_into()?))
+    #[must_use]
+    pub const fn split(self) -> (u32, u32) {
+        #[allow(clippy::cast_possible_truncation)]
+        let offset = self.0 as u32;
+
+        (offset, (self.0 >> 32) as u32)
     }
 }
 
-impl TryFrom<&[u8]> for Segment {
-    type Error = TryFromIntError;
+pub trait AsSegment {
+    fn as_segment(&self) -> Segment;
+}
 
-    fn try_from(buffer: &[u8]) -> Result<Self, Self::Error> {
-        Self::new(buffer.as_ptr() as usize, buffer.len())
+impl<T: AsRef<[u8]>> AsSegment for T {
+    fn as_segment(&self) -> Segment {
+        #[allow(clippy::cast_possible_truncation)]
+        let size = self.as_ref().len() as u32;
+
+        Segment::new(self.as_ref().as_ptr() as u32, size)
     }
 }
 
@@ -45,9 +52,9 @@ impl TryFrom<Segment> for &[u8] {
     type Error = TryFromIntError;
 
     fn try_from(segment: Segment) -> Result<Self, Self::Error> {
-        let (offset, size) = segment.split()?;
+        let (offset, size) = segment.split();
         let pointer = offset as *mut u8;
-        Ok(unsafe { from_raw_parts_mut(pointer, size) })
+        Ok(unsafe { from_raw_parts_mut(pointer, size as usize) })
     }
 }
 
@@ -57,7 +64,7 @@ mod tests {
 
     #[test]
     fn test_pack_unpack_offset_size() {
-        let segment = Segment::new(100500, 42).unwrap();
-        assert_eq!(segment.split().unwrap(), (100500, 42));
+        let segment = Segment::new(100500, 42);
+        assert_eq!(segment.split(), (100500, 42));
     }
 }

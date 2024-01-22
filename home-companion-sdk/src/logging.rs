@@ -1,4 +1,4 @@
-use crate::memory::Segment;
+use crate::memory::{AsSegment, Segment};
 
 #[link(wasm_import_module = "logging")]
 extern "C" {
@@ -11,10 +11,10 @@ extern "C" {
 
 #[inline]
 pub fn info(message: &str) {
-    unsafe { _info(message.as_bytes().try_into().unwrap()) }
+    unsafe { _info(message.as_segment()) }
 }
 
 #[inline]
 pub fn error(message: &str) {
-    unsafe { _error(message.as_bytes().try_into().unwrap()) }
+    unsafe { _error(message.as_segment()) }
 }

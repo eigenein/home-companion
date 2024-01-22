@@ -12,9 +12,9 @@ pub struct Settings {
 /// YouLess API response ([Enelogic][1] firmware).
 ///
 /// [1]: https://wiki.td-er.nl/index.php?title=YouLess#Enelogic_.28default.29_firmware
+#[serde_with::serde_as]
 #[derive(Deserialize)]
 #[must_use]
-#[serde_with::serde_as]
 pub struct Counters {
     #[serde(rename = "tm")]
     #[serde_as(as = "serde_with::TimestampSeconds<i64>")]

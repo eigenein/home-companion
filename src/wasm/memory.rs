@@ -57,10 +57,10 @@ impl Memory {
         store: impl AsContext<Data = D>,
         segment: Segment,
     ) -> Result<Vec<u8>> {
-        let (offset, size) = segment.split()?;
-        let mut buffer = vec![0; size];
+        let (offset, size) = segment.split();
+        let mut buffer = vec![0; size as usize];
         if size != 0 {
-            self.0.read(store.as_context(), offset, &mut buffer).with_context(|| {
+            self.0.read(store.as_context(), offset as usize, &mut buffer).with_context(|| {
                 format!("failed to read `{size}` bytes from the memory at offset `{offset}`")
             })?;
         }
@@ -76,10 +76,13 @@ impl Memory {
         mut store: impl AsContextMut<Data = D>,
         value: &[u8],
     ) -> Result<Segment> {
-        let offset = self.1.call_async(store.as_context_mut(), value.len()).await?;
+        #[allow(clippy::cast_possible_truncation)]
+        let size = value.len() as u32;
+
+        let offset = self.1.call_async(store.as_context_mut(), size).await?;
         self.0
-            .write(store.as_context_mut(), offset, value)
+            .write(store.as_context_mut(), offset as usize, value)
             .context("failed to write the buffer into the instance's memory")?;
-        Segment::new(offset, value.len()).context("failed to pack the buffer size and offset")
+        Ok(Segment::new(offset, size))
     }
 }

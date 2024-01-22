@@ -1,7 +1,11 @@
 mod models;
 
 use anyhow::{Context, Result};
-use home_companion_sdk::{error::LoggedUnwrap, logging::info, memory::Segment};
+use home_companion_sdk::{
+    error::LoggedUnwrap,
+    logging::info,
+    memory::{AsSegment, Segment},
+};
 
 use crate::models::{Counters, Settings};
 
@@ -21,7 +25,7 @@ pub extern "C" fn init(settings: Segment) -> Segment {
         .with_context(|| format!("failed to request YouLess at `{url}`"))
         .unwrap_logged();
 
-    Segment::try_from(b"".as_slice()).unwrap()
+    b"".as_segment()
 }
 
 fn request_counters(url: &str) -> Result<Counters> {

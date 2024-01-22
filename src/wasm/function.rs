@@ -42,15 +42,13 @@ impl AllocFunction {
     pub async fn call_async<D: Send>(
         &self,
         mut store: impl AsContextMut<Data = D>,
-        size: usize,
-    ) -> Result<usize> {
-        Ok(self
+        size: u32,
+    ) -> Result<u32> {
+        self.0
             .0
-            .0
-            .call_async(store.as_context_mut(), (u32::try_from(size)?,))
+            .call_async(store.as_context_mut(), (size,))
             .await
-            .context("failed to allocate memory")?
-            .try_into()?)
+            .context("failed to allocate memory")
     }
 }
 
