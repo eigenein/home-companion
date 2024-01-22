@@ -10,9 +10,7 @@ pub extern "C" fn alloc(size: usize) -> *mut u8 {
 #[no_mangle]
 pub extern "C" fn init(settings: &[u8]) -> &[u8] {
     let settings: Settings = rmp_serde::from_slice(&settings).expect("failed to parse settings");
-    unsafe {
-        info("hello");
-    }
+    info(&format!("initializing, hostname = `{}`…", settings.host));
     b""
 }
 
