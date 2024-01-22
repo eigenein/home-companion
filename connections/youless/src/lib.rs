@@ -16,8 +16,7 @@ pub extern "C" fn alloc(size: usize) -> *mut u8 {
 
 #[no_mangle]
 pub extern "C" fn init(settings: Segment) -> Segment {
-    let settings: Settings =
-        rmp_serde::from_slice(settings.try_into().unwrap()).expect("failed to parse settings");
+    let settings: Settings = rmp_serde::from_slice(&*settings).expect("failed to parse settings");
     let url = format!("http://{}/e", settings.host);
 
     info(&format!("checking YouLess at `{url}`…"));

@@ -1,4 +1,4 @@
-use std::{num::TryFromIntError, slice::from_raw_parts_mut};
+use std::{ops::Deref, slice::from_raw_parts_mut};
 
 /// Allocate memory with the global allocator.
 ///
@@ -48,13 +48,13 @@ impl<T: AsRef<[u8]>> AsSegment for T {
     }
 }
 
-impl TryFrom<Segment> for &[u8] {
-    type Error = TryFromIntError;
+impl Deref for Segment {
+    type Target = [u8];
 
-    fn try_from(segment: Segment) -> Result<Self, Self::Error> {
-        let (offset, size) = segment.split();
+    fn deref(&self) -> &Self::Target {
+        let (offset, size) = self.split();
         let pointer = offset as *mut u8;
-        Ok(unsafe { from_raw_parts_mut(pointer, size as usize) })
+        unsafe { from_raw_parts_mut(pointer, size as usize) }
     }
 }
 
