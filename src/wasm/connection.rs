@@ -5,7 +5,6 @@ use crate::{
     helpers::serde::transcode_toml_to_message_pack,
     wasm::{
         r#extern::TryFromInstance, function::InitGuestFunction, instance::Instance, memory::Memory,
-        state::HostInstanceState,
     },
 };
 
@@ -28,7 +27,7 @@ impl Connection {
     /// Byte string, returned by the `init()`.
     pub async fn init_async<D: Send>(
         &mut self,
-        mut store: impl AsContextMut<Data = HostInstanceState<D>>,
+        mut store: impl AsContextMut<Data = D>,
         settings: Table,
     ) -> crate::prelude::Result<Vec<u8>> {
         let settings = transcode_toml_to_message_pack(settings)?;

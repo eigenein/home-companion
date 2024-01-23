@@ -3,13 +3,13 @@ use std::path::Path;
 use wasmtime::{Config, Store};
 
 use crate::{
+    companion::state::HostInstanceState,
     prelude::*,
-    wasm,
-    wasm::{linker::Linker, module::Module, state::HostInstanceState},
+    wasm::{linker::Linker, module::Module},
 };
 
 /// WASM engine/linker wrapper.
-#[derive(derive_more::From)]
+#[derive(derive_more::From, derive_more::AsMut)]
 #[must_use]
 pub struct Engine(wasmtime::Engine);
 
@@ -26,10 +26,8 @@ impl Engine {
         Store::new(&self.0, data)
     }
 
-    pub fn new_linker<D: Send>(&self) -> Result<Linker<HostInstanceState<D>>> {
-        let mut linker = Linker::from(wasmtime::Linker::new(&self.0));
-        wasm::linker::logging::add_to(linker.as_mut())?;
-        Ok(linker)
+    pub fn new_linker<D: Send>(&self) -> Linker<HostInstanceState<D>> {
+        Linker::from(wasmtime::Linker::new(&self.0))
     }
 
     pub fn load_module(&self, path: &Path) -> Result<Module> {

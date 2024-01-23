@@ -4,12 +4,14 @@ use futures::{stream, StreamExt, TryStreamExt};
 use wasmtime::AsContextMut;
 
 use crate::{
+    companion::state::HostInstanceState,
     prelude::*,
     setup::Setup,
-    wasm::{
-        connection::Connection, engine::Engine, module::StatefulModule, state::HostInstanceState,
-    },
+    wasm,
+    wasm::{connection::Connection, engine::Engine, module::StatefulModule},
 };
+
+pub mod state;
 
 /// 🚀 The Companion engine.
 pub struct Companion {
@@ -22,7 +24,8 @@ impl Companion {
         info!("loading connections…");
 
         let engine = Engine::new_async()?;
-        let linker = engine.new_linker()?;
+        let mut linker = engine.new_linker();
+        wasm::linker::logging::add_to(linker.as_mut())?;
 
         let connections: HashMap<String, StatefulModule> = {
             let engine = &engine;

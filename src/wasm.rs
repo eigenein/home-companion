@@ -5,7 +5,6 @@ pub mod engine;
 mod r#extern;
 mod function;
 mod instance;
-mod linker;
+pub mod linker;
 mod memory;
 pub mod module;
-pub mod state;

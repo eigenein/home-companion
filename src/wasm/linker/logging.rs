@@ -1,9 +1,6 @@
 use wasmtime::Linker;
 
-use crate::{
-    prelude::*,
-    wasm::{memory::Memory, state::HostInstanceState},
-};
+use crate::{companion::state::HostInstanceState, prelude::*, wasm::memory::Memory};
 
 type Caller<'c, D> = wasmtime::Caller<'c, HostInstanceState<D>>;
 
