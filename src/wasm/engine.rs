@@ -28,7 +28,7 @@ impl Engine {
 
     pub fn new_linker<D: Send>(&self) -> Result<Linker<HostInstanceState<D>>> {
         let mut linker = Linker::from(wasmtime::Linker::new(&self.0));
-        wasm::logging::add_to_linker(linker.as_mut())?;
+        wasm::linker::logging::add_to(linker.as_mut())?;
         Ok(linker)
     }
 

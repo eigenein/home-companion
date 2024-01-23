@@ -6,7 +6,6 @@ mod r#extern;
 mod function;
 mod instance;
 mod linker;
-mod logging;
 mod memory;
 pub mod module;
 pub mod state;
