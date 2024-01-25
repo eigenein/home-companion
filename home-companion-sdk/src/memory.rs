@@ -42,7 +42,7 @@ impl Segment {
     }
 
     /// Deserialize a message from the memory segment.
-    pub fn deserialize<M: prost::Message + Default>(segment: Self) -> Result<M> {
+    pub fn deserialize_from<M: prost::Message + Default>(segment: Self) -> Result<M> {
         M::decode(&*segment).context("failed to deserialize a message")
     }
 }
