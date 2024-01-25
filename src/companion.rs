@@ -7,7 +7,6 @@ use crate::{
     companion::state::HostInstanceState,
     prelude::*,
     setup::Setup,
-    wasm,
     wasm::{connection::Connection, engine::Engine, module::StatefulModule},
 };
 
@@ -26,7 +25,6 @@ impl Companion {
 
         let engine = Engine::new_async()?;
         let mut linker = engine.new_linker();
-        wasm::linker::logging::add_to(linker.as_mut())?;
         abi::add_to(linker.as_mut())?;
 
         let connections: HashMap<String, StatefulModule> = {

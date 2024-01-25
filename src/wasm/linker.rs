@@ -1,5 +1,3 @@
-pub mod logging;
-
 use wasmtime::AsContextMut;
 
 use crate::{
