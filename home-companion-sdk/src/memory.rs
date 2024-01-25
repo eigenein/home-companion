@@ -1,5 +1,8 @@
 use std::{ops::Deref, slice::from_raw_parts_mut};
 
+use anyhow::{Context, Result};
+use prost::Message;
+
 /// Allocate memory with the global allocator.
 ///
 /// Convenience shortcut for Companion plugins.
@@ -25,6 +28,10 @@ impl Segment {
         Self(offset as u64 | (size as u64) << 32)
     }
 
+    pub fn serialize(message: &impl Message) -> Self {
+        message.encode_to_vec().as_segment()
+    }
+
     /// Split the packed slice reference into separate offset and size.
     #[must_use]
     pub const fn split(self) -> (u32, u32) {
@@ -32,6 +39,11 @@ impl Segment {
         let offset = self.0 as u32;
 
         (offset, (self.0 >> 32) as u32)
+    }
+
+    /// Deserialize a message from the memory segment.
+    pub fn deserialize<M: prost::Message + Default>(segment: Self) -> Result<M> {
+        M::decode(&*segment).context("failed to deserialize a message")
     }
 }
 

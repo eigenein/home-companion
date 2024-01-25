@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 #[must_use]
 pub enum InstanceId {
     Connection(String),

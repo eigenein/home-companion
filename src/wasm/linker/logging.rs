@@ -5,6 +5,7 @@ use crate::{companion::state::HostInstanceState, prelude::*, wasm::memory::Memor
 type Caller<'c, D> = wasmtime::Caller<'c, HostInstanceState<D>>;
 
 /// Add the logging functions to the WASM linker.
+#[deprecated]
 pub fn add_to<D: Send>(linker: &mut Linker<HostInstanceState<D>>) -> Result {
     linker.func_wrap("logging", "error", |mut caller: Caller<'_, D>, segment: u64| {
         error!(connection_id = ?caller.data().id, "{}", Memory::read_string_from_caller(&mut caller, segment.into())?);

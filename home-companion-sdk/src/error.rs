@@ -1,20 +1,30 @@
-use anyhow::Error;
+use anyhow::anyhow;
 
-use crate::logging::error;
+/// Module extern function call result.
+#[derive(Clone, prost::Oneof)]
+#[must_use]
+pub enum Result<T: prost::Message + Default> {
+    #[prost(message, tag = "1")]
+    Ok(T),
 
-pub trait LoggedUnwrap<T> {
-    #[deprecated = "introduce a proper serializable error"]
-    fn unwrap_logged(self) -> T;
+    #[prost(string, tag = "2")]
+    Err(String),
 }
 
-impl<T> LoggedUnwrap<T> for Result<T, Error> {
-    fn unwrap_logged(self) -> T {
-        match self {
-            Ok(value) => value,
-            Err(inner) => {
-                error(&format!("Error: {inner:#}"));
-                panic!();
-            }
+impl<T: prost::Message + Default> From<anyhow::Result<T>> for Result<T> {
+    fn from(result: anyhow::Result<T>) -> Self {
+        match result {
+            Ok(value) => Self::Ok(value),
+            Err(error) => Self::Err(format!("{error:#}")),
+        }
+    }
+}
+
+impl<T: prost::Message + Default> From<Result<T>> for anyhow::Result<T> {
+    fn from(result: Result<T>) -> Self {
+        match result {
+            Result::Ok(value) => Ok(value),
+            Result::Err(message) => Err(anyhow!("{message}")),
         }
     }
 }

@@ -1,9 +1,8 @@
 mod models;
 
-use anyhow::{Context, Result};
+use anyhow::Context;
 use home_companion_sdk::{
-    error::LoggedUnwrap,
-    logging::info,
+    abi::{call, Action, HostCall, Log, LogLevel},
     memory::{AsSegment, Segment},
 };
 
@@ -16,18 +15,26 @@ pub extern "C" fn alloc(size: usize) -> *mut u8 {
 
 #[no_mangle]
 pub extern "C" fn init(settings: Segment) -> Segment {
-    let settings: Settings = rmp_serde::from_slice(&*settings).expect("failed to parse settings");
-    let url = format!("http://{}/e", settings.host);
-
-    info(&format!("checking YouLess at `{url}`…"));
-    request_counters(&url)
-        .with_context(|| format!("failed to request YouLess at `{url}`"))
-        .unwrap_logged();
-
-    b"".as_segment()
+    init_unsafe(settings).unwrap().as_segment() // FIXME
 }
 
-fn request_counters(url: &str) -> Result<Counters> {
+fn init_unsafe(settings: Segment) -> anyhow::Result<&'static [u8]> {
+    let settings: Settings =
+        rmp_serde::from_slice(&settings).context("failed to parse settings")?;
+    let url = format!("http://{}/e", settings.host);
+
+    call(&HostCall {
+        action: Some(Action::Log(Log {
+            message: format!("checking YouLess at `{url}`…"),
+            level: LogLevel::Info as i32,
+        })),
+    });
+    // request_counters(&url).with_context(|| format!("failed to request YouLess at `{url}`"))?;
+
+    Ok(b"")
+}
+
+fn request_counters(url: &str) -> anyhow::Result<Counters> {
     ureq::get(url)
         .call()
         .context("failed to call the YouLess")?

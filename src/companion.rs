@@ -11,6 +11,7 @@ use crate::{
     wasm::{connection::Connection, engine::Engine, module::StatefulModule},
 };
 
+mod abi;
 pub mod state;
 
 /// 🚀 The Companion engine.
@@ -26,6 +27,7 @@ impl Companion {
         let engine = Engine::new_async()?;
         let mut linker = engine.new_linker();
         wasm::linker::logging::add_to(linker.as_mut())?;
+        abi::add_to(linker.as_mut())?;
 
         let connections: HashMap<String, StatefulModule> = {
             let engine = &engine;
