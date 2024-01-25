@@ -45,13 +45,6 @@ impl Memory {
         Self::try_from_caller(caller)?.read_bytes(caller.as_context(), segment)
     }
 
-    pub fn read_string_from_caller<D: Send>(
-        caller: &mut Caller<'_, D>,
-        segment: Segment,
-    ) -> Result<String> {
-        Ok(String::from_utf8(Self::read_bytes_from_caller(caller, segment)?)?)
-    }
-
     pub fn read_bytes<D: Send>(
         &self,
         store: impl AsContext<Data = D>,
