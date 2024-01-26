@@ -20,7 +20,7 @@ impl<Params: WasmParams, Results: WasmResults> TryFromExtern
         extern_
             .into_func()
             .ok_or_else(|| anyhow!("the export is not a function"))?
-            .typed(store.as_context())
+            .typed(store)
             .context("failed to extract a typed function")
             .map(Self)
     }
@@ -42,14 +42,10 @@ impl WrapExtern for AllocFunction {
 impl AllocFunction {
     pub async fn call_async<D: Send>(
         &self,
-        mut store: impl AsContextMut<Data = D>,
+        store: impl AsContextMut<Data = D>,
         size: u32,
     ) -> Result<u32> {
-        self.0
-            .0
-            .call_async(store.as_context_mut(), (size,))
-            .await
-            .context("failed to allocate memory")
+        self.0.0.call_async(store, (size,)).await.context("failed to allocate memory")
     }
 }
 
@@ -83,6 +79,6 @@ impl InitGuestFunction {
             .call_async(store.as_context_mut(), (descriptor.into(),))
             .await
             .context("failed to call `init()`")?;
-        memory.read_bytes(store.as_context_mut(), BufferDescriptor::from_raw(descriptor))
+        memory.read_bytes(store, BufferDescriptor::from_raw(descriptor))
     }
 }

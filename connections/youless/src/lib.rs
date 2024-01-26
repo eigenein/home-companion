@@ -2,8 +2,8 @@ mod models;
 
 use anyhow::Context;
 use home_companion_sdk::{
-    abi::{call, Action, HostCall, Log, LogLevel},
     memory::BufferDescriptor,
+    rpc::{call, logging::Log},
 };
 
 use crate::models::{Counters, Settings};
@@ -15,23 +15,18 @@ pub extern "C" fn alloc(size: usize) -> *mut u8 {
 
 #[no_mangle]
 pub extern "C" fn init(settings: BufferDescriptor) -> BufferDescriptor {
-    init_unsafe(settings).unwrap().into() // FIXME
-}
+    fn inner(settings: BufferDescriptor) -> anyhow::Result<&'static [u8]> {
+        let settings: Settings =
+            rmp_serde::from_slice(&settings).context("failed to parse settings")?;
+        let url = format!("http://{}/e", settings.host);
 
-fn init_unsafe(settings: BufferDescriptor) -> anyhow::Result<&'static [u8]> {
-    let settings: Settings =
-        rmp_serde::from_slice(&settings).context("failed to parse settings")?;
-    let url = format!("http://{}/e", settings.host);
+        call(Log::info(format!("checking YouLess at `{url}`…")));
+        // request_counters(&url).with_context(|| format!("failed to request YouLess at `{url}`"))?;
 
-    call(&HostCall {
-        action: Some(Action::Log(Log {
-            message: format!("checking YouLess at `{url}`…"),
-            level: LogLevel::Info as i32,
-        })),
-    });
-    // request_counters(&url).with_context(|| format!("failed to request YouLess at `{url}`"))?;
+        Ok(b"")
+    }
 
-    Ok(b"")
+    inner(settings).unwrap().into() // FIXME: should return the result instead of `unwrap`
 }
 
 fn request_counters(url: &str) -> anyhow::Result<Counters> {

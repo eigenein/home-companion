@@ -1,3 +1,3 @@
-pub mod abi;
-pub mod error;
 pub mod memory;
+pub mod result;
+pub mod rpc;
