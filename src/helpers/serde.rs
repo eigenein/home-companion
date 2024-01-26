@@ -3,6 +3,7 @@ use toml::Table;
 
 use crate::prelude::*;
 
+#[deprecated = "just forward TOML to plugins"]
 pub fn transcode_toml_to_message_pack(table: Table) -> Result<Vec<u8>> {
     let mut buffer = Vec::new();
     let mut serializer = rmp_serde::Serializer::new(&mut buffer).with_struct_map();
