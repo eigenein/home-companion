@@ -4,14 +4,13 @@ use futures::{stream, StreamExt, TryStreamExt};
 use wasmtime::AsContextMut;
 
 use crate::{
-    companion::state::HostInstanceState,
     prelude::*,
+    rpc,
     setup::Setup,
-    wasm::{connection::Connection, engine::Engine, module::StatefulModule},
+    wasm::{
+        connection::Connection, engine::Engine, module::StatefulModule, state::HostInstanceState,
+    },
 };
-
-mod rpc;
-pub mod state;
 
 /// 🚀 The Companion engine.
 pub struct Companion {

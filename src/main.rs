@@ -2,6 +2,7 @@ mod cli;
 mod companion;
 mod helpers;
 mod prelude;
+mod rpc;
 mod setup;
 mod tracing;
 mod wasm;

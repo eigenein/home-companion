@@ -1,14 +1,11 @@
-use home_companion_sdk::{
-    memory::BufferDescriptor,
-    result::RpcResult,
-    rpc::{logging::LogLevel, Rpc},
-};
+mod logging;
+
+use home_companion_sdk::{memory::BufferDescriptor, result::RpcResult, rpc::Rpc};
 use wasmtime::{AsContext, Caller, Linker};
 
 use crate::{
-    companion::state::HostInstanceState,
     prelude::*,
-    wasm::{r#extern::TryFromCaller, memory::Memory},
+    wasm::{r#extern::TryFromCaller, memory::Memory, state::HostInstanceState},
 };
 
 /// Add the RPC handler to the linker.
@@ -42,22 +39,16 @@ fn handle_call<D>(
     memory: &Memory,
     message_descriptor: u64,
 ) -> Result<Option<Vec<u8>>> {
-    let connection_id = store.as_context().data().id.clone();
+    let instance_id = store.as_context().data().id.clone();
     let rpc: Rpc = memory
         .read_message(store, BufferDescriptor::from_raw(message_descriptor))
-        .with_context(|| format!("failed to read a call from `{connection_id:?}`"))?;
+        .with_context(|| format!("failed to read a call from `{instance_id:?}`"))?;
     let action = rpc.action;
 
     if let Some(log) = action.log {
-        let message = log.message;
-        match LogLevel::try_from(log.level)? {
-            LogLevel::Error => error!(?connection_id, "{message}"),
-            LogLevel::Info => info!(?connection_id, "{message}"),
-            LogLevel::Debug => debug!(?connection_id, "{message}"),
-            LogLevel::Trace => trace!(?connection_id, "{message}"),
-        }
-        return Ok(None);
+        logging::call(&instance_id, log)?;
+        Ok(None)
+    } else {
+        bail!("there is no action in the call")
     }
-
-    bail!("there is no action in the call")
 }

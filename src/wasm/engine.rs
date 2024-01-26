@@ -3,9 +3,8 @@ use std::path::Path;
 use wasmtime::{Config, Store};
 
 use crate::{
-    companion::state::HostInstanceState,
     prelude::*,
-    wasm::{linker::Linker, module::Module},
+    wasm::{linker::Linker, module::Module, state::HostInstanceState},
 };
 
 /// WASM engine/linker wrapper.
