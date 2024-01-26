@@ -14,7 +14,7 @@ workspace = true
 [dependencies]
 anyhow = "1.0.79"
 chrono = { version = "0.4.31", default-features = false }
-home-companion-sdk = { path = "../../home-companion-sdk" }
+home-companion-sdk = { path = "../../home-companion-sdk", features = ["guest"] }
 prost = "0.12.3"
 rmp-serde = "1.1.2"
 serde = { version = "1.0.195", default-features = false, features = ["derive"] }

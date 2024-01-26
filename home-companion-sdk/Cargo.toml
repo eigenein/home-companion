@@ -8,6 +8,10 @@ version.workspace = true
 [lib]
 crate-type = ["lib"]
 
+[features]
+host = [] # Companion host functionality
+guest = [] # Guest module functionality
+
 [lints]
 workspace = true
 

@@ -1,16 +1,19 @@
 use prost::Message;
 
-use crate::memory::{AsSegment, Segment};
+#[cfg(feature = "guest")]
+use crate::memory::BufferDescriptor;
 
+#[cfg(feature = "guest")]
 #[link(wasm_import_module = "companion")]
 extern "C" {
     #[link_name = "call"]
-    fn _call(message: Segment);
+    fn _call(message: BufferDescriptor);
 }
 
+#[cfg(feature = "guest")]
 #[inline]
 pub fn call(message: &HostCall) {
-    unsafe { _call(message.encode_to_vec().as_segment()) }
+    unsafe { _call(message.encode_to_vec().into()) }
 }
 
 #[derive(Clone, prost::Message)]

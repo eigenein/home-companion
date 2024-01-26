@@ -1,3 +1,4 @@
+use home_companion_sdk::memory::BufferDescriptor;
 use wasmtime::{AsContext, AsContextMut, Extern, WasmParams, WasmResults};
 
 use crate::{
@@ -75,13 +76,13 @@ impl InitGuestFunction {
         memory: &Memory,
         settings: &[u8],
     ) -> Result<Vec<u8>> {
-        let segment = memory.write_bytes(store.as_context_mut(), settings).await?;
-        let segment = self
+        let descriptor = memory.write_bytes(store.as_context_mut(), settings).await?;
+        let descriptor = self
             .0
             .0
-            .call_async(store.as_context_mut(), (segment.into(),))
+            .call_async(store.as_context_mut(), (descriptor.into(),))
             .await
             .context("failed to call `init()`")?;
-        memory.read_bytes(store.as_context_mut(), segment.into())
+        memory.read_bytes(store.as_context_mut(), BufferDescriptor::from_raw(descriptor))
     }
 }

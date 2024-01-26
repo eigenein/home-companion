@@ -41,13 +41,13 @@ impl<T: ExternName + TryFromExtern> TryFromInstance for T {
     }
 }
 
-pub trait TryFromCaller<D>: Sized {
+pub trait TryFromCaller: Sized {
     /// Retrieve an extern from the caller.
-    fn try_from_caller(caller: &mut Caller<D>) -> Result<Self>;
+    fn try_from_caller<D>(caller: &mut Caller<D>) -> Result<Self>;
 }
 
-impl<T: ExternName + TryFromExtern, D> TryFromCaller<D> for T {
-    fn try_from_caller(caller: &mut Caller<D>) -> Result<Self> {
+impl<T: ExternName + TryFromExtern> TryFromCaller for T {
+    fn try_from_caller<D>(caller: &mut Caller<D>) -> Result<Self> {
         let extern_ = caller
             .get_export(Self::NAME)
             .ok_or_else(|| anyhow!("failed to look up caller's extern `{}`", Self::NAME))?;

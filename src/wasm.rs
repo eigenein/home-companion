@@ -2,9 +2,9 @@
 
 pub mod connection;
 pub mod engine;
-mod r#extern;
-mod function;
-mod instance;
+pub mod r#extern;
+pub mod function;
+pub mod instance;
 pub mod linker;
 pub mod memory;
 pub mod module;

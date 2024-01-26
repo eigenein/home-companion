@@ -43,7 +43,7 @@ clap = { version = "4.4.16", features = ["cargo", "derive", "env"] }
 derive_more = { version = "1.0.0-beta.6", features = ["as_ref", "from"] }
 dotenvy = "0.15.7"
 futures = { version = "0.3.30", default-features = false, features = ["std"] }
-home-companion-sdk = { path = "home-companion-sdk" }
+home-companion-sdk = { path = "home-companion-sdk", features = ["host"] }
 prost = "0.12.3"
 rmp-serde = "1.1.2"
 sentry = { version = "0.32.1", default-features = false, features = ["anyhow", "backtrace", "contexts", "panic", "reqwest", "rustls", "tracing"] }

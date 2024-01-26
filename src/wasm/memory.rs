@@ -1,4 +1,5 @@
-use home_companion_sdk::memory::Segment;
+use home_companion_sdk::memory::BufferDescriptor;
+use prost::Message;
 use wasmtime::{AsContext, AsContextMut, Caller, Instance};
 
 use crate::{
@@ -13,8 +14,8 @@ use crate::{
 #[must_use]
 pub struct Memory(wasmtime::Memory, AllocFunction);
 
-impl<D> TryFromCaller<D> for Memory {
-    fn try_from_caller(caller: &mut Caller<'_, D>) -> Result<Self> {
+impl TryFromCaller for Memory {
+    fn try_from_caller<D>(caller: &mut Caller<'_, D>) -> Result<Self> {
         let memory_extern = caller.get_export("memory");
         let alloc = AllocFunction::try_from_caller(caller)?;
         Self::new(memory_extern, alloc)
@@ -38,19 +39,12 @@ impl Memory {
         Ok(Self(inner, alloc))
     }
 
-    pub fn read_bytes_from_caller<D: Send>(
-        caller: &mut Caller<'_, D>,
-        segment: Segment,
-    ) -> Result<Vec<u8>> {
-        Self::try_from_caller(caller)?.read_bytes(caller.as_context(), segment)
-    }
-
-    pub fn read_bytes<D: Send>(
+    pub fn read_bytes(
         &self,
-        store: impl AsContext<Data = D>,
-        segment: Segment,
+        store: impl AsContext,
+        descriptor: BufferDescriptor,
     ) -> Result<Vec<u8>> {
-        let (offset, size) = segment.split();
+        let (offset, size) = descriptor.split();
         let mut buffer = vec![0; size as usize];
         if size != 0 {
             self.0.read(store.as_context(), offset as usize, &mut buffer).with_context(|| {
@@ -58,6 +52,14 @@ impl Memory {
             })?;
         }
         Ok(buffer)
+    }
+
+    pub fn read_message<M: Message + Default>(
+        &self,
+        store: impl AsContext,
+        descriptor: BufferDescriptor,
+    ) -> Result<M> {
+        M::decode(&*self.read_bytes(store, descriptor)?).context("failed to decode a message")
     }
 
     /// Write the byte string into the instance's memory and return the string buffer offset.
@@ -68,7 +70,7 @@ impl Memory {
         &self,
         mut store: impl AsContextMut<Data = D>,
         value: &[u8],
-    ) -> Result<Segment> {
+    ) -> Result<BufferDescriptor> {
         #[allow(clippy::cast_possible_truncation)]
         let size = value.len() as u32;
 
@@ -76,6 +78,6 @@ impl Memory {
         self.0
             .write(store.as_context_mut(), offset as usize, value)
             .context("failed to write the buffer into the instance's memory")?;
-        Ok(Segment::new(offset, size))
+        Ok(BufferDescriptor::new(offset, size))
     }
 }

@@ -3,7 +3,7 @@ mod models;
 use anyhow::Context;
 use home_companion_sdk::{
     abi::{call, Action, HostCall, Log, LogLevel},
-    memory::{AsSegment, Segment},
+    memory::BufferDescriptor,
 };
 
 use crate::models::{Counters, Settings};
@@ -14,11 +14,11 @@ pub extern "C" fn alloc(size: usize) -> *mut u8 {
 }
 
 #[no_mangle]
-pub extern "C" fn init(settings: Segment) -> Segment {
-    init_unsafe(settings).unwrap().as_segment() // FIXME
+pub extern "C" fn init(settings: BufferDescriptor) -> BufferDescriptor {
+    init_unsafe(settings).unwrap().into() // FIXME
 }
 
-fn init_unsafe(settings: Segment) -> anyhow::Result<&'static [u8]> {
+fn init_unsafe(settings: BufferDescriptor) -> anyhow::Result<&'static [u8]> {
     let settings: Settings =
         rmp_serde::from_slice(&settings).context("failed to parse settings")?;
     let url = format!("http://{}/e", settings.host);
