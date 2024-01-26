@@ -1,22 +1,28 @@
 pub mod action;
 pub mod logging;
 
+use anyhow::Context;
 use prost::Message;
 
-use crate::rpc::action::Action;
+use crate::{result::RpcResult, rpc::action::Action};
 
 #[cfg(feature = "guest")]
 #[link(wasm_import_module = "companion")]
 extern "C" {
     #[link_name = "call"]
-    fn _call(message_descriptor: crate::memory::BufferDescriptor);
+    fn _call(
+        message_descriptor: crate::memory::BufferDescriptor,
+    ) -> crate::memory::BufferDescriptor;
 }
 
 #[cfg(feature = "guest")]
 #[inline]
-pub fn call(call: impl Into<Rpc>) {
+pub fn call<M: Message + Default>(call: impl Into<Rpc>) -> anyhow::Result<M> {
     let message_descriptor = call.into().encode_to_vec().into();
-    unsafe { _call(message_descriptor) }
+    let result_descriptor = unsafe { _call(message_descriptor) };
+    RpcResult::<M>::decode(&*result_descriptor)
+        .context("failed to decode the RPC result")?
+        .into()
 }
 
 #[derive(Clone, Message)]

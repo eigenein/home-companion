@@ -11,6 +11,20 @@ pub struct RpcResult<T: Message + Default> {
     pub error_message: Option<String>,
 }
 
+/// Convert optional result into an RPC result.
+impl<T: Message + Default> From<Result<Option<T>>> for RpcResult<T> {
+    fn from(result: Result<Option<T>>) -> Self {
+        match result {
+            Ok(value) => Self { value, error_message: None },
+            Err(error) => Self {
+                value: None,
+                error_message: Some(format!("{error:#}")),
+            },
+        }
+    }
+}
+
+/// Convert non-optional result into an RPC result.
 impl<T: Message + Default> From<Result<T>> for RpcResult<T> {
     fn from(result: Result<T>) -> Self {
         match result {

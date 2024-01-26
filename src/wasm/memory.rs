@@ -75,9 +75,20 @@ impl Memory {
         let size = value.len() as u32;
 
         let offset = self.1.call_async(store.as_context_mut(), size).await?;
-        self.0
-            .write(store.as_context_mut(), offset as usize, value)
-            .context("failed to write the buffer into the instance's memory")?;
+        if size != 0 {
+            self.0
+                .write(store.as_context_mut(), offset as usize, value)
+                .context("failed to write the buffer into the instance's memory")?;
+        }
         Ok(BufferDescriptor::new(offset, size))
+    }
+
+    #[inline]
+    pub async fn write_message<D: Send>(
+        &self,
+        store: impl AsContextMut<Data = D>,
+        message: &impl Message,
+    ) -> Result<BufferDescriptor> {
+        self.write_bytes(store, &message.encode_to_vec()).await
     }
 }

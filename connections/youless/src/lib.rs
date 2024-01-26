@@ -16,12 +16,13 @@ pub extern "C" fn alloc(size: usize) -> *mut u8 {
 
 #[no_mangle]
 pub extern "C" fn init(settings: BufferDescriptor) -> BufferDescriptor {
+    #[inline]
     fn inner(settings: BufferDescriptor) -> Result<Vec<u8>> {
         let settings: Settings =
             rmp_serde::from_slice(&settings).context("failed to parse settings")?;
         let url = format!("http://{}/e", settings.host);
 
-        call(Log::info(format!("checking YouLess at `{url}`…")));
+        call::<()>(Log::info(format!("checking YouLess at `{url}`…")))?;
         // request_counters(&url).with_context(|| format!("failed to request YouLess at `{url}`"))?;
 
         Ok(Vec::new()) // TODO

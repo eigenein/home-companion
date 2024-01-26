@@ -69,6 +69,7 @@ impl std::ops::Deref for BufferDescriptor {
 /// Serialize the result and return a serialized buffer descriptor.
 #[cfg(feature = "guest")]
 impl<T: prost::Message + Default> From<crate::result::RpcResult<T>> for BufferDescriptor {
+    #[inline]
     fn from(result: crate::result::RpcResult<T>) -> Self {
         use prost::Message;
         result.encode_to_vec().into()

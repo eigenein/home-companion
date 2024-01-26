@@ -45,7 +45,8 @@ impl Companion {
                         linker.instantiate_async(store.as_context_mut(), &module).await?;
                     let state = Connection::from(instance)
                         .init_async(store.as_context_mut(), settings)
-                        .await?;
+                        .await
+                        .with_context(|| format!("failed to initialise `{id}`"))?;
                     let stateful_module = StatefulModule { module, state };
                     Ok((id, stateful_module))
                 })
