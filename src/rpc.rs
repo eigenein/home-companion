@@ -5,18 +5,16 @@ use wasmtime::{AsContext, Caller, Linker};
 
 use crate::{
     prelude::*,
-    wasm::{r#extern::TryFromCaller, memory::Memory, state::HostInstanceState},
+    wasm::{r#extern::TryFromCaller, memory::Memory, state::GuestState},
 };
 
 /// Add the RPC handler to the linker.
-pub fn add_to<D: Send>(
-    linker: &mut Linker<HostInstanceState<D>>,
-) -> Result<&mut Linker<HostInstanceState<D>>> {
+pub fn add_to<D: Send>(linker: &mut Linker<GuestState<D>>) -> Result<&mut Linker<GuestState<D>>> {
     linker
         .func_wrap1_async(
             "companion",
             "call",
-            |mut caller: Caller<'_, HostInstanceState<D>>, message_descriptor: u64| {
+            |mut caller: Caller<'_, GuestState<D>>, message_descriptor: u64| {
                 Box::new(async move {
                     let memory = Memory::try_from_caller(&mut caller)?;
                     let result = handle_call(caller.as_context(), &memory, message_descriptor);
@@ -35,7 +33,7 @@ pub fn add_to<D: Send>(
 /// and parsed correctly on the guest's side with a specific type.
 #[inline]
 fn handle_call<D>(
-    store: impl AsContext<Data = HostInstanceState<D>>,
+    store: impl AsContext<Data = GuestState<D>>,
     memory: &Memory,
     message_descriptor: u64,
 ) -> Result<Option<Vec<u8>>> {

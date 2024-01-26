@@ -4,7 +4,7 @@ use wasmtime::{Config, Store};
 
 use crate::{
     prelude::*,
-    wasm::{linker::Linker, module::Module, state::HostInstanceState},
+    wasm::{linker::Linker, module::Module, state::GuestState},
 };
 
 /// WASM engine/linker wrapper.
@@ -25,7 +25,7 @@ impl Engine {
         Store::new(&self.0, data)
     }
 
-    pub fn new_linker<D: Send>(&self) -> Linker<HostInstanceState<D>> {
+    pub fn new_linker<D: Send>(&self) -> Linker<GuestState<D>> {
         Linker::from(wasmtime::Linker::new(&self.0))
     }
 
