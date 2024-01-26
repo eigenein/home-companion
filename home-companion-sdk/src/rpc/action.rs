@@ -1,18 +1,18 @@
-use prost::Oneof;
+use prost::Message;
 
 use crate::rpc::logging::Log;
 
-#[derive(Clone, Oneof)]
+#[derive(Clone, Message)]
 #[must_use]
-pub enum Action {
+pub struct Action {
     /// Log the message.
-    #[prost(message, tag = "1")]
-    Log(Log),
+    #[prost(message, tag = "1", optional)]
+    pub log: Option<Log>,
 }
 
 impl From<Log> for Action {
     #[inline]
     fn from(log: Log) -> Self {
-        Self::Log(log)
+        Self { log: Some(log) }
     }
 }

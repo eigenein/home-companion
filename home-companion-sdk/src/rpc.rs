@@ -19,16 +19,16 @@ pub fn call(call: impl Into<Rpc>) {
     unsafe { _call(message_descriptor) }
 }
 
-#[derive(Clone, prost::Message)]
+#[derive(Clone, Message)]
 #[must_use]
 pub struct Rpc {
-    #[prost(oneof = "Action", tags = "1")]
-    pub action: Option<Action>,
+    #[prost(message, tag = "1", required)]
+    pub action: Action,
 }
 
 impl<T: Into<Action>> From<T> for Rpc {
     #[inline]
     fn from(action: T) -> Self {
-        Self { action: Some(action.into()) }
+        Self { action: action.into() }
     }
 }

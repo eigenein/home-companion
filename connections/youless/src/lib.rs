@@ -1,8 +1,9 @@
 mod models;
 
-use anyhow::Context;
+use anyhow::{Context, Result};
 use home_companion_sdk::{
     memory::BufferDescriptor,
+    result::RpcResult,
     rpc::{call, logging::Log},
 };
 
@@ -15,7 +16,7 @@ pub extern "C" fn alloc(size: usize) -> *mut u8 {
 
 #[no_mangle]
 pub extern "C" fn init(settings: BufferDescriptor) -> BufferDescriptor {
-    fn inner(settings: BufferDescriptor) -> anyhow::Result<&'static [u8]> {
+    fn inner(settings: BufferDescriptor) -> Result<Vec<u8>> {
         let settings: Settings =
             rmp_serde::from_slice(&settings).context("failed to parse settings")?;
         let url = format!("http://{}/e", settings.host);
@@ -23,13 +24,13 @@ pub extern "C" fn init(settings: BufferDescriptor) -> BufferDescriptor {
         call(Log::info(format!("checking YouLess at `{url}`…")));
         // request_counters(&url).with_context(|| format!("failed to request YouLess at `{url}`"))?;
 
-        Ok(b"")
+        Ok(Vec::new()) // TODO
     }
 
-    inner(settings).unwrap().into() // FIXME: should return the result instead of `unwrap`
+    RpcResult::from(inner(settings)).into()
 }
 
-fn request_counters(url: &str) -> anyhow::Result<Counters> {
+fn request_counters(url: &str) -> Result<Counters> {
     ureq::get(url)
         .call()
         .context("failed to call the YouLess")?

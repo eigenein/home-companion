@@ -1,8 +1,5 @@
 //! Memory management.
 
-#[cfg(feature = "guest")]
-use std::{ops::Deref, slice::from_raw_parts_mut};
-
 /// Allocate memory with the global allocator.
 ///
 /// Convenience shortcut for Companion plugins.
@@ -44,6 +41,7 @@ impl BufferDescriptor {
     }
 }
 
+/// Convert the slice into a descriptor.
 #[cfg(feature = "guest")]
 impl<T: AsRef<[u8]>> From<T> for BufferDescriptor {
     fn from(slice: T) -> Self {
@@ -56,14 +54,24 @@ impl<T: AsRef<[u8]>> From<T> for BufferDescriptor {
     }
 }
 
+/// Dereference the descriptor to access teh referenced memory slice.
 #[cfg(feature = "guest")]
-impl Deref for BufferDescriptor {
+impl std::ops::Deref for BufferDescriptor {
     type Target = [u8];
 
     fn deref(&self) -> &Self::Target {
         let (offset, size) = self.split();
         let pointer = offset as *mut u8;
-        unsafe { from_raw_parts_mut(pointer, size as usize) }
+        unsafe { std::slice::from_raw_parts_mut(pointer, size as usize) }
+    }
+}
+
+/// Serialize the result and return a serialized buffer descriptor.
+#[cfg(feature = "guest")]
+impl<T: prost::Message + Default> From<crate::result::RpcResult<T>> for BufferDescriptor {
+    fn from(result: crate::result::RpcResult<T>) -> Self {
+        use prost::Message;
+        result.encode_to_vec().into()
     }
 }
 
